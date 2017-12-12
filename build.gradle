@@ -1,0 +1,13 @@
+apply plugin: 'java-library'
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    
+	compile group: 'org.json', name: 'json', version: '20160810'
+}
+

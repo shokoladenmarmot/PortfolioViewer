@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.String?>
+<?import javafx.collections.FXCollections?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+
+<GridPane alignment="center" hgap="10" vgap="10" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.ChartController">
+	<padding>
+		<Insets bottom="10" left="25" right="25" top="25" />
+	</padding>
+
+	<Label fx:id="toplbl" prefWidth="90.0" text="BTC/USD" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="0" />
+
+	<Label fx:id="exchangeLbl" prefWidth="90.0" text="Exchange" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+
+	<ComboBox fx:id="exchange" onAction="#exchangeChanged" prefWidth="120.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+		<items>
+			<FXCollections fx:factory="observableArrayList">
+				<String fx:value="Coinbase" />
+				<String fx:value="Kraken" />
+			</FXCollections>
+		</items>
+		<value>
+			<String fx:value="Coinbase" />
+		</value>
+	</ComboBox>
+	<HBox spacing="10" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="2">
+
+		<RadioButton fx:id="months1Rd" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#radioChanged" selected="true" text="1 Month">
+			<toggleGroup>
+				<ToggleGroup fx:id="mygroup" />
+			</toggleGroup>
+		</RadioButton>
+		<RadioButton fx:id="months3Rd" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#radioChanged" text="3 Months" toggleGroup="$mygroup" />
+		<RadioButton fx:id="months3Rd" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#radioChanged" text="6 Month" toggleGroup="$mygroup" />
+		<RadioButton fx:id="customRd" minWidth="-Infinity" mnemonicParsing="false" onAction="#radioChanged" text="Custom" toggleGroup="$mygroup" />
+		<!--<fx:define> <ToggleGroup fx:id="group" /> </fx:define> <children> <RadioButton 
+			minWidth="80" text="1 Month" toggleGroup="$group" /> <RadioButton minWidth="80" 
+			text="3 Months" toggleGroup="$group" /> <RadioButton minWidth="80" text="6 
+			Months" toggleGroup="$group" /> <RadioButton minWidth="80" text="1 Year" 
+			toggleGroup="$group" /> <RadioButton minWidth="80" text="All Time" toggleGroup="$group" 
+			/> <RadioButton minWidth="80" text="Custom" onAction="#radioChanged" toggleGroup="$group" 
+			/> </children> -->
+		<DatePicker fx:id="startDate" disable="true" minHeight="-Infinity" minWidth="-Infinity" />
+		<DatePicker fx:id="endDate" disable="true" minHeight="-Infinity" minWidth="-Infinity" />
+	</HBox>
+
+
+	<LineChart fx:id="btcchart" prefHeight="416.0" prefWidth="1222.0" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="3">
+		<xAxis>
+			<CategoryAxis fx:id="xAxis" />
+		</xAxis>
+		<yAxis>
+			<NumberAxis fx:id="yAxis" />
+		</yAxis>
+	</LineChart>
+	<columnConstraints>
+		<ColumnConstraints />
+		<ColumnConstraints />
+	</columnConstraints>
+	<rowConstraints>
+		<RowConstraints />
+		<RowConstraints />
+		<RowConstraints />
+		<RowConstraints />
+	</rowConstraints>
+
+
+</GridPane>
