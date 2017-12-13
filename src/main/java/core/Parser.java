@@ -1,4 +1,4 @@
-package application;
+package core;
 
 public class Parser {
 

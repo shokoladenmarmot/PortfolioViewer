@@ -1,19 +1,18 @@
-package application;
+package controllers;
 
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import Start.Main;
+import fxml.UIPage;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
-import javafx.scene.layout.GridPane;
 
 public class StartController implements Initializable {
 
-	@FXML
-	private GridPane startLayout;
-
+	
 	@FXML
 	private Button newTemp;
 
@@ -30,18 +29,17 @@ public class StartController implements Initializable {
 	}
 
 	public void newTemplate(ActionEvent ae) {
-		Main.getInstance().changeScene("View.fxml");
+		Main.getInstance().changeScene(UIPage.Page.VIEW);
 		ae.consume();
 	}
 
 	public void loadTemplate(ActionEvent ae) {
-		Main.getInstance().changeScene("View.fxml");
-//		Parser.open();
+		Main.getInstance().changeScene(UIPage.Page.VIEW);
 		ae.consume();
 	}
 
 	public void loadCharts(ActionEvent ae) {
-		Main.getInstance().changeScene("Charts.fxml");
+		Main.getInstance().changeScene(UIPage.Page.CHART);
 		ae.consume();
 	}
 

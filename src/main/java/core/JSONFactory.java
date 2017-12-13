@@ -1,4 +1,4 @@
-package application;
+package core;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
