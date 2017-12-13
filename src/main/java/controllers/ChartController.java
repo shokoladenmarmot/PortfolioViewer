@@ -2,9 +2,13 @@ package controllers;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.logging.Logger;
 
+import Start.Main;
 import exchanges.Exchange;
 import exchanges.ExchangeProvider;
+import fxml.UIPage;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.chart.CategoryAxis;
@@ -19,6 +23,8 @@ import javafx.scene.control.RadioButton;
 
 public class ChartController implements Initializable {
 
+	private static final Logger LOGGER = Logger.getLogger( ChartController.class.getName() );
+	
 	enum Duration {
 		ONE, THREE, SIX, CUSTOM
 	}
@@ -80,8 +86,10 @@ public class ChartController implements Initializable {
 		updateChart();
 	}
 
-	public void refreshChart() {
-		updateChart();
+	public void refreshChart(ActionEvent ae) {
+		ae.consume();
+		Main.getInstance().changeScene(UIPage.Page.START);
+//		updateChart();
 	}
 
 	public void exchangeChanged() {
@@ -122,42 +130,6 @@ public class ChartController implements Initializable {
 
 			});
 
-			// // Get data for every 24 hours
-			// JSONObject result =
-			// JSONFactory.getJSONObject("https://api.kraken.com/0/public/OHLC?pair=BCHUSD&interval=1440");
-			// // &since=1501545600
-			//
-			// System.out.println((System.currentTimeMillis() - startTime) / 1000);
-			//
-			// // KRAKEN: array of array entries(<time>, <open>, <high>, <low>, <close>,
-			// // <vwap>, <volume>, <count>)
-			//
-			// JSONArray asArray = ((JSONObject)
-			// result.get("result")).getJSONArray("BCHUSD");
-			// GregorianCalendar gc = (GregorianCalendar)
-			// GregorianCalendar.getInstance(TimeZone.getTimeZone("UTC"));
-			// for (int i = 0; i < asArray.length(); ++i) {
-			// JSONArray content = asArray.getJSONArray(i);
-			// gc.setTimeInMillis(content.getLong(0) * 1000);
-			//
-			// System.out.println(content.getLong(0) + " " + gc.getTime() + " " +
-			// content.getString(4));
-			// }
-
-			// System.out.println(((JSONObject)
-			// result.get("result")).getJSONArray("BCHUSD"));
-
-			// System.out.println(GregorianCalendar.getInstance(TimeZone.getTimeZone("UTC")).getTime());
-			//
-			// GregorianCalendar gc = new GregorianCalendar(2017, 7, 1);
-			// gc.setTimeZone(TimeZone.getTimeZone("UTC"));
-			// System.out.println(gc.getTimeInMillis());
-			// java.util.Date time = new GregorianCalendar(2017, 7, 1).getTime();
-			// System.out.println(time.getTime() + 3600000);
-
-			// series1.getData().add(new Data<String, Integer>("Jan", 23));
-			// series1.getData().add(new Data<String, Integer>("Feb", 14));
-			// series1.getData().add(new Data<String, Integer>("Mar", 15));
 			btcchart.getData().add(series1);
 		}
 	}

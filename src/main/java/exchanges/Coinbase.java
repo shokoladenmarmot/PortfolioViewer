@@ -1,6 +1,10 @@
 package exchanges;
 
+import java.util.logging.Logger;
+
 public class Coinbase extends Exchange {
+	
+	private static final Logger LOGGER = Logger.getLogger( Coinbase.class.getName() );
 
 	@Override
 	protected void init() {
@@ -14,14 +18,20 @@ public class Coinbase extends Exchange {
 	}
 
 	@Override
-	public void updateOLHC(String pair) {
-		super.updateOLHC(pair);
+	public void updateOLHC(String pair, int interval) {
+		super.updateOLHC(pair, interval);
 
 		lastData.clear();
 	}
 
 	@Override
 	protected void populateListOfPairs() {
-		
+
+	}
+
+	@Override
+	protected void updateLastTime() {
+		// TODO Auto-generated method stub
+
 	}
 }

@@ -1,7 +1,12 @@
 package exchanges;
 
+import java.util.logging.Logger;
+
 public enum ExchangeProvider {
+
 	KRAKEN(Kraken.class), COINBASE(Coinbase.class);
+	
+	private static final Logger LOGGER = Logger.getLogger( ExchangeProvider.class.getName() );
 
 	private Exchange inst;
 	private Class<? extends Exchange> exchangeClass;

@@ -3,6 +3,7 @@ package fxml;
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.logging.Logger;
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -11,6 +12,7 @@ import javafx.util.Pair;
 public enum UIPage {
 
 	INSTANCE();
+	private static final Logger LOGGER = Logger.getLogger( UIPage.class.getName() );
 
 	public static final String fxmlSuffix = ".fxml";
 	public static final String fxmlPackage = "/fxml/";

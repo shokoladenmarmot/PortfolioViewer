@@ -2,6 +2,7 @@ package controllers;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.logging.Logger;
 
 import Start.Main;
 import fxml.UIPage;
@@ -11,6 +12,8 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 
 public class StartController implements Initializable {
+	
+	private static final Logger LOGGER = Logger.getLogger( StartController.class.getName() );
 
 	
 	@FXML
@@ -29,18 +32,18 @@ public class StartController implements Initializable {
 	}
 
 	public void newTemplate(ActionEvent ae) {
-		Main.getInstance().changeScene(UIPage.Page.VIEW);
 		ae.consume();
+		Main.getInstance().changeScene(UIPage.Page.VIEW);
 	}
 
 	public void loadTemplate(ActionEvent ae) {
-		Main.getInstance().changeScene(UIPage.Page.VIEW);
 		ae.consume();
+		Main.getInstance().changeScene(UIPage.Page.VIEW);
 	}
 
 	public void loadCharts(ActionEvent ae) {
-		Main.getInstance().changeScene(UIPage.Page.CHART);
 		ae.consume();
+		Main.getInstance().changeScene(UIPage.Page.CHART);
 	}
 
 }

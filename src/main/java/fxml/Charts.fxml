@@ -35,7 +35,7 @@
 			</FXCollections>
 		</items>
 		<value>
-			<String fx:value="Coinbase" />
+			<String fx:value="Kraken" />
 		</value>
 	</ComboBox>
 	<HBox spacing="10" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="2">

@@ -2,6 +2,7 @@ package Start;
 
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import exchanges.ExchangeProvider;
 import fxml.UIPage;
@@ -11,9 +12,11 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 
 public class Main extends Application {
+	private static final Logger LOGGER = Logger.getLogger( Main.class.getName() );
+	
 	private static Main instance;
 	private Stage myStage;
-
+	
 	private final ScheduledThreadPoolExecutor threadExc = new ScheduledThreadPoolExecutor(2);
 
 	public static Main getInstance() {
@@ -29,16 +32,19 @@ public class Main extends Application {
 		changeScene(UIPage.Page.START);
 	}
 
+	/**
+	 * Create threads for updating every exchange.
+	 */
 	private void initialize() {
-		
-		threadExc.scheduleWithFixedDelay(new Runnable() {
-			@Override
-			public void run() {
-				for (ExchangeProvider ep : ExchangeProvider.values()) {
+
+		for (ExchangeProvider ep : ExchangeProvider.values()) {
+			threadExc.scheduleWithFixedDelay(new Runnable() {
+				@Override
+				public void run() {
 					ep.getInstance().update();
 				}
-			}
-		}, 0, 10, TimeUnit.SECONDS);
+			}, 0, 10, TimeUnit.SECONDS);
+		}
 	}
 
 	@Override
@@ -59,7 +65,10 @@ public class Main extends Application {
 				height = myStage.getScene().getHeight();
 			}
 
-			Scene scene = new Scene(root, width, height);
+			Scene scene = root.getScene();
+			if (scene == null) {
+				scene = new Scene(root, width, height);
+			}
 			scene.getStylesheets().add(UIPage.defaultStyleSheet);
 			if (p.css != null) {
 				scene.getStylesheets().add(p.css.toExternalForm());
