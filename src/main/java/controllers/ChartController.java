@@ -1,13 +1,12 @@
 package controllers;
 
 import java.net.URL;
+import java.time.LocalDate;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
-import Start.Main;
 import exchanges.Exchange;
 import exchanges.ExchangeProvider;
-import fxml.UIPage;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -19,12 +18,15 @@ import javafx.scene.chart.XYChart.Data;
 import javafx.scene.chart.XYChart.Series;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.DateCell;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.RadioButton;
+import javafx.util.Callback;
 
 public class ChartController implements Initializable {
 
-	private static final Logger LOGGER = Logger.getLogger( ChartController.class.getName() );
-	
+	private static final Logger LOGGER = Logger.getLogger(ChartController.class.getName());
+
 	enum Duration {
 		ONE, THREE, SIX, CUSTOM
 	}
@@ -61,47 +63,74 @@ public class ChartController implements Initializable {
 	@FXML
 	private RadioButton customRd;
 
+	@FXML
+	private DatePicker startDate;
+
+	@FXML
+	private DatePicker endDate;
+
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-
-		String fileName = location.getFile();
-		fileName = fileName.substring(fileName.lastIndexOf('/') + 1);
-
-		assert btcchart != null : "fx:id=\"btcchart\" not declared in " + fileName;
-		assert exchangeCmb != null : "fx:id=\"exchange\" not declared in " + fileName;
-
-		// TODO add for all
-
 		init();
 	}
 
 	private void init() {
 
-		duration = Duration.ONE;
-		exchange = ExchangeProvider.KRAKEN.getInstance();
-
 		btcchart.setCreateSymbols(false);
 		btcchart.setLegendVisible(false);
 
-		updateChart();
+		startDate.setValue(LocalDate.now());
+		endDate.setValue(LocalDate.now());
+
+		startDate.setShowWeekNumbers(false);
+		endDate.setShowWeekNumbers(false);
+
+		final Callback<DatePicker, DateCell> dayCellFactory = new Callback<DatePicker, DateCell>() {
+			@Override
+			public DateCell call(final DatePicker datePicker) {
+				return new DateCell() {
+					@Override
+					public void updateItem(LocalDate item, boolean empty) {
+						super.updateItem(item, empty);
+
+						if (item.isAfter(LocalDate.now())) {
+							setDisable(true);
+						}
+					}
+				};
+			}
+		};
+		startDate.setDayCellFactory(dayCellFactory);
+		endDate.setDayCellFactory(dayCellFactory);
+
+		optionChanged();
 	}
 
 	public void refreshChart(ActionEvent ae) {
+		// Main.getInstance().changeScene(UIPage.Page.START);
 		ae.consume();
-		Main.getInstance().changeScene(UIPage.Page.START);
-//		updateChart();
+
+		optionChanged();
 	}
 
-	public void exchangeChanged() {
+	public void optionChanged() {
 
-		if (months1Rd.isSelected()) {
-			duration = Duration.ONE;
+		if (customRd.isSelected()) {
+			startDate.setDisable(false);
+			endDate.setDisable(false);
+			duration = Duration.CUSTOM;
 		} else if (months3Rd.isSelected()) {
 			duration = Duration.THREE;
+			startDate.setDisable(true);
+			endDate.setDisable(true);
 		} else if (months6Rd.isSelected()) {
 			duration = Duration.SIX;
-		} else if (customRd.isSelected()) {
-			duration = Duration.CUSTOM;
+			startDate.setDisable(true);
+			endDate.setDisable(true);
+		} else if (months1Rd.isSelected()) {
+			duration = Duration.ONE;
+			startDate.setDisable(true);
+			endDate.setDisable(true);
 		}
 
 		if (exchangeCmb.getValue().equalsIgnoreCase("Kraken")) {
@@ -110,11 +139,7 @@ public class ChartController implements Initializable {
 			exchange = ExchangeProvider.COINBASE.getInstance();
 		}
 
-		// System.out.println(JSONFactory.getJSONObject("https://api.kraken.com/0/public/Ticker?pair=BCHEUR").toString(2));
-		updateChart();
-	}
-
-	public void radioChanged() {
+		// TODO Save configs inside a ChartObject
 		updateChart();
 	}
 

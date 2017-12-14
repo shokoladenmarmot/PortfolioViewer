@@ -53,6 +53,7 @@ public enum UIPage {
 			try {
 				pages.put(s.name, new Pair<Parent, URL>(FXMLLoader.load(s.url), s.url));
 			} catch (IOException e) {
+				LOGGER.warning(e.getMessage());
 				e.printStackTrace();
 			}
 		}

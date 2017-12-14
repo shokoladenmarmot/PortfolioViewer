@@ -1,5 +1,6 @@
 package Start;
 
+import java.io.File;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -7,16 +8,17 @@ import java.util.logging.Logger;
 import exchanges.ExchangeProvider;
 import fxml.UIPage;
 import javafx.application.Application;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 
 public class Main extends Application {
-	private static final Logger LOGGER = Logger.getLogger( Main.class.getName() );
-	
+	public static final Logger LOGGER = Logger.getLogger(Main.class.getName());
+
 	private static Main instance;
 	private Stage myStage;
-	
+
 	private final ScheduledThreadPoolExecutor threadExc = new ScheduledThreadPoolExecutor(2);
 
 	public static Main getInstance() {
@@ -50,7 +52,12 @@ public class Main extends Application {
 	@Override
 	public void stop() {
 		threadExc.shutdown();
-		System.out.println("Exiting");
+		LOGGER.info("Shutting down");
+		try {
+			threadExc.awaitTermination(10, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			LOGGER.warning(e.getMessage());
+		}
 	}
 
 	public void changeScene(UIPage.Page p) {
@@ -77,11 +84,28 @@ public class Main extends Application {
 			myStage.setScene(scene);
 			myStage.show();
 		} catch (Exception e) {
+			LOGGER.warning(e.getMessage());
 			e.printStackTrace();
 		}
 	}
 
+	public Parent getCurrentParent() {
+		if (myStage != null && myStage.getScene() != null) {
+			return myStage.getScene().getRoot();
+		}
+		return null;
+	}
+
 	public static void main(String[] args) {
 		launch(args);
+	}
+
+	public File openFile() {
+		FileChooser fileChooser = new FileChooser();
+		fileChooser.setTitle("Select a trade history file");
+		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Text Files", "*.txt"),
+				new FileChooser.ExtensionFilter("XML Files", "*.xml"));
+
+		return fileChooser.showOpenDialog(myStage);
 	}
 }

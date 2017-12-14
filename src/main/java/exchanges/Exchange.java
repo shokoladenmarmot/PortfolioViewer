@@ -84,6 +84,8 @@ public abstract class Exchange {
 	}
 
 	public final void update(int interval) {
+		LOGGER.info("Update all symbols for: " + interval);
+
 		Set<String> copyOfdefaults = new HashSet<String>(defaultPairList);
 
 		copyOfdefaults.parallelStream().forEach(s -> {
@@ -93,12 +95,7 @@ public abstract class Exchange {
 	}
 
 	public final void update() {
-		Set<String> copyOfdefaults = new HashSet<String>(defaultPairList);
-
-		copyOfdefaults.parallelStream().forEach(s -> {
-			updateOLHC(s);
-		});
-		updateLastTime();
+		update(1440);
 	}
 
 	public final long getLastUpdate() {

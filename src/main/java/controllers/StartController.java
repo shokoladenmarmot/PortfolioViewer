@@ -27,8 +27,6 @@ public class StartController implements Initializable {
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		String fileName = location.getFile();
-		fileName = fileName.substring(fileName.lastIndexOf('/') + 1);
 	}
 
 	public void newTemplate(ActionEvent ae) {

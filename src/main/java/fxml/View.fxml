@@ -8,8 +8,9 @@
    <children>
       <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="20.0">
          <children>
-            <Button fx:id="addButton" mnemonicParsing="false" onAction="#addNewTrade" text="Add" />
+            <Button fx:id="addButton" mnemonicParsing="false" onAction="#addNewTrade" text="New" />
             <Button fx:id="saveButton" mnemonicParsing="false" text="Save" />
+            <Button fx:id="loadButton" mnemonicParsing="false" text="Load" />
             <Button fx:id="clearButton" mnemonicParsing="false" text="Clear" />
          </children>
       </HBox>

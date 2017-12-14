@@ -3,8 +3,8 @@ package exchanges;
 import java.util.logging.Logger;
 
 public class Coinbase extends Exchange {
-	
-	private static final Logger LOGGER = Logger.getLogger( Coinbase.class.getName() );
+
+	private static final Logger LOGGER = Logger.getLogger(Coinbase.class.getName());
 
 	@Override
 	protected void init() {
@@ -21,17 +21,18 @@ public class Coinbase extends Exchange {
 	public void updateOLHC(String pair, int interval) {
 		super.updateOLHC(pair, interval);
 
+		LOGGER.info("Update " + pair + ":" + interval);
+
 		lastData.clear();
 	}
 
 	@Override
 	protected void populateListOfPairs() {
-
+		LOGGER.info("Populate list of pairs");
 	}
 
 	@Override
 	protected void updateLastTime() {
-		// TODO Auto-generated method stub
-
+		LOGGER.info("Update list of time");
 	}
 }

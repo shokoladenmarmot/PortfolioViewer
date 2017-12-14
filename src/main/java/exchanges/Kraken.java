@@ -14,10 +14,10 @@ import core.JSONFactory;
 
 public class Kraken extends Exchange {
 
-	private static final Logger LOGGER = Logger.getLogger( Kraken.class.getName() );
+	private static final Logger LOGGER = Logger.getLogger(Kraken.class.getName());
 	// Kraken requests:
 	// System.out.println(JSONFactory.getJSONObject("https://api.kraken.com/0/public/Ticker?pair=BCHEUR").toString(2));
-	
+
 	@Override
 	protected void init() {
 		super.init();
@@ -33,7 +33,8 @@ public class Kraken extends Exchange {
 
 	@Override
 	protected void populateListOfPairs() {
-		
+
+		LOGGER.info("Populate list of pairs");
 		new Thread(() -> {
 			JSONObject result = JSONFactory.getJSONObject(url + "AssetPairs");
 			if (result == null)
@@ -45,11 +46,12 @@ public class Kraken extends Exchange {
 
 	@Override
 	public void updateOLHC(String pair, int interval) {
-
 		if (availablePairList.contains(pair) == false) {
 			return;
 		}
 		super.updateOLHC(pair, interval);
+
+		LOGGER.info("Update " + pair + ":" + interval);
 
 		// Default interval 1 day
 		JSONObject result = JSONFactory.getJSONObject(url + "OHLC?pair=" + pair + "&interval=" + interval); // &since=1501545600
@@ -84,6 +86,7 @@ public class Kraken extends Exchange {
 
 	@Override
 	protected void updateLastTime() {
+		LOGGER.info("Update list of time");
 
 		JSONObject result = JSONFactory.getJSONObject(url + "Time");
 		if (result == null)

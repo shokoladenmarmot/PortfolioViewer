@@ -1,12 +1,13 @@
 package exchanges;
 
-import java.util.logging.Logger;
+import Start.Main;
 
 public enum ExchangeProvider {
 
 	KRAKEN(Kraken.class), COINBASE(Coinbase.class);
-	
-	private static final Logger LOGGER = Logger.getLogger( ExchangeProvider.class.getName() );
+
+	// private static final Logger LOGGER =
+	// Logger.getLogger(ExchangeProvider.class.getName());
 
 	private Exchange inst;
 	private Class<? extends Exchange> exchangeClass;
@@ -15,10 +16,8 @@ public enum ExchangeProvider {
 		exchangeClass = ec;
 		try {
 			inst = ec.newInstance();
-		} catch (InstantiationException e) {
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();
+		} catch (InstantiationException | IllegalAccessException e) {
+			Main.LOGGER.warning(e.getMessage());
 		}
 	}
 
