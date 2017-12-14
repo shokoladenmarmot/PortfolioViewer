@@ -13,10 +13,8 @@
 		<Insets top="25" right="25" bottom="10" left="25" />
 	</padding>
 
-	<Button fx:id="newTemp" text="New" GridPane.columnIndex="0"
+	<Button fx:id="newTemp" text="My View" GridPane.columnIndex="0"
 		GridPane.rowIndex="0" maxWidth="100" onAction="#newTemplate" />
-	<Button fx:id="load" text="Load" GridPane.columnIndex="0"
-		GridPane.rowIndex="1" maxWidth="100" onAction="#loadTemplate" />
 	<Button fx:id="chart" text="Charts" GridPane.columnIndex="0"
 		GridPane.rowIndex="2" maxWidth="100" onAction="#loadCharts" />
 

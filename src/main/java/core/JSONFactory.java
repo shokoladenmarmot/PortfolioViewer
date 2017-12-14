@@ -44,14 +44,17 @@ public class JSONFactory {
 
 				} catch (JSONPointerException | IOException | IllegalArgumentException e) {
 					LOGGER.warning(e.getMessage());
+					e.printStackTrace();
 				} finally {
 					LOGGER.info("Closing stream connection to : " + url);
 					reader.close();
 				}
 			} catch (MalformedURLException e) {
 				LOGGER.warning(e.getMessage());
+				e.printStackTrace();
 			} catch (IOException e) {
 				LOGGER.warning(e.getMessage());
+				e.printStackTrace();
 			}
 		}
 		return null;

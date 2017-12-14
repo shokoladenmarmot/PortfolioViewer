@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 
 import core.Order;
 import core.Order.OrderType;
+import core.Parser;
 import exchanges.ExchangeProvider;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -146,8 +147,9 @@ public class ViewController implements Initializable {
 
 			dialog.setResultConverter(dialogButton -> {
 				if (dialogButton == logButtonType) {
+					// NOTE: Divide the time by 1000 to get result in seconds
 					return new Order(symbolCmb.getValue(), Double.parseDouble(amount.getText()), typeCmb.getValue(),
-							java.sql.Date.valueOf(dp.getValue()));
+							java.sql.Date.valueOf(dp.getValue()).getTime() / 1000);
 				}
 				return null;
 			});
@@ -160,16 +162,22 @@ public class ViewController implements Initializable {
 		ae.consume();
 	}
 
-	public void clearTemplate(ActionEvent ae) {
-		ae.consume();
-	}
-
 	public void saveTemplate(ActionEvent ae) {
 		ae.consume();
 	}
 
+	public void loadTemplate(ActionEvent ae) {
+
+		Parser.loadXMLOrderList();
+		ae.consume();
+	}
+
+	public void clearTemplate(ActionEvent ae) {
+		ae.consume();
+	}
+
 	private void createLayoutFromOrder(Order newOrder) {
-		LOGGER.info("Creating layout for order: " + newOrder.toString());
+		LOGGER.info("Creating layout for order\n" + newOrder.toXML());
 
 		// TODO Layout?
 

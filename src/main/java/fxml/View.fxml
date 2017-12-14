@@ -9,9 +9,9 @@
       <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="20.0">
          <children>
             <Button fx:id="addButton" mnemonicParsing="false" onAction="#addNewTrade" text="New" />
-            <Button fx:id="saveButton" mnemonicParsing="false" text="Save" />
-            <Button fx:id="loadButton" mnemonicParsing="false" text="Load" />
-            <Button fx:id="clearButton" mnemonicParsing="false" text="Clear" />
+            <Button fx:id="saveButton" mnemonicParsing="false" text="Save" onAction="#saveTemplate"/>
+            <Button fx:id="loadButton" mnemonicParsing="false" text="Load" onAction="#loadTemplate" />
+            <Button fx:id="clearButton" mnemonicParsing="false" text="Clear" onAction="#clearTemplate"/>
          </children>
       </HBox>
       <VBox fx:id="operationalLayout" prefHeight="200.0" prefWidth="100.0" />

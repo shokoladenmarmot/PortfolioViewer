@@ -34,11 +34,6 @@ public class StartController implements Initializable {
 		Main.getInstance().changeScene(UIPage.Page.VIEW);
 	}
 
-	public void loadTemplate(ActionEvent ae) {
-		ae.consume();
-		Main.getInstance().changeScene(UIPage.Page.VIEW);
-	}
-
 	public void loadCharts(ActionEvent ae) {
 		ae.consume();
 		Main.getInstance().changeScene(UIPage.Page.CHART);

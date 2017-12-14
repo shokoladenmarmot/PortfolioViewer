@@ -18,6 +18,7 @@ public enum ExchangeProvider {
 			inst = ec.newInstance();
 		} catch (InstantiationException | IllegalAccessException e) {
 			Main.LOGGER.warning(e.getMessage());
+			e.printStackTrace();
 		}
 	}
 

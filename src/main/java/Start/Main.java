@@ -57,6 +57,7 @@ public class Main extends Application {
 			threadExc.awaitTermination(10, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			LOGGER.warning(e.getMessage());
+			e.printStackTrace();
 		}
 	}
 
@@ -103,8 +104,8 @@ public class Main extends Application {
 	public File openFile() {
 		FileChooser fileChooser = new FileChooser();
 		fileChooser.setTitle("Select a trade history file");
-		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Text Files", "*.txt"),
-				new FileChooser.ExtensionFilter("XML Files", "*.xml"));
+		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("XML Files", "*.xml"),
+				new FileChooser.ExtensionFilter("All Files", "*.*"));
 
 		return fileChooser.showOpenDialog(myStage);
 	}
