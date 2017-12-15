@@ -9,11 +9,11 @@ public class Order {
 		INPUT, OUTPUT;
 
 		public String toString() {
-			return (this == OUTPUT) ? "Output" : "Input";
+			return (this == OUTPUT) ? "OUTPUT" : "INPUT";
 		}
 
 		public static OrderType get(String t) {
-			return t.equalsIgnoreCase("Input") ? INPUT : OUTPUT;
+			return t.equalsIgnoreCase("INPUT") ? INPUT : (t.equalsIgnoreCase("OUTPUT")) ? OUTPUT : null;
 		}
 	}
 
@@ -76,17 +76,17 @@ public class Order {
 		sb.append("<order>\n");
 		sb.append("<symbol>");
 		sb.append(symbol);
-		sb.append("<\\symbol>\n");
+		sb.append("</symbol>\n");
 		sb.append("<amount>");
 		sb.append(amount);
-		sb.append("<\\amount>\n");
+		sb.append("</amount>\n");
 		sb.append("<type>");
 		sb.append(type.toString());
-		sb.append("<\\type>\n");
+		sb.append("</type>\n");
 		sb.append("<date>");
 		sb.append(date);
-		sb.append("<\\date>\n");
-		sb.append("<\\order>");
+		sb.append("</date>\n");
+		sb.append("</order>\n");
 
 		return sb.toString();
 	}

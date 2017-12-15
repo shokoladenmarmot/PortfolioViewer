@@ -105,8 +105,16 @@ public class Main extends Application {
 		FileChooser fileChooser = new FileChooser();
 		fileChooser.setTitle("Select a trade history file");
 		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("XML Files", "*.xml"),
-				new FileChooser.ExtensionFilter("All Files", "*.*"));
+				new FileChooser.ExtensionFilter("All Types", "*.*"));
 
 		return fileChooser.showOpenDialog(myStage);
+	}
+
+	public File saveToFile() {
+		FileChooser fileChooser = new FileChooser();
+		fileChooser.setTitle("Export trade history file");
+		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("XML File", "*.xml"),
+				new FileChooser.ExtensionFilter("All Types", "*.*"));
+		return fileChooser.showSaveDialog(myStage);
 	}
 }

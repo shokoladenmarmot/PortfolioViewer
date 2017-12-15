@@ -11,7 +11,8 @@ import java.util.logging.Logger;
 
 import core.Order;
 import core.Order.OrderType;
-import core.Parser;
+import core.XMLFactory;
+import core.TradeLibrary;
 import exchanges.ExchangeProvider;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -52,6 +53,7 @@ public class ViewController implements Initializable {
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
+
 	}
 
 	public void addNewTrade(ActionEvent ae) {
@@ -157,29 +159,38 @@ public class ViewController implements Initializable {
 
 		Optional<Order> result = dialog.showAndWait();
 		if (result.isPresent()) {
-			createLayoutFromOrder(result.get());
+			Order o = result.get();
+			TradeLibrary.getInstance().addOrder(o);
+			addNewOrder(o);
 		}
 		ae.consume();
 	}
 
 	public void saveTemplate(ActionEvent ae) {
+
+		XMLFactory.saveLibraryToXML();
 		ae.consume();
 	}
 
 	public void loadTemplate(ActionEvent ae) {
 
-		Parser.loadXMLOrderList();
+		XMLFactory.loadOrderListFromXML();
+
+		for (Order o : TradeLibrary.getInstance().getOrders()) {
+			addNewOrder(o);
+		}
 		ae.consume();
 	}
 
 	public void clearTemplate(ActionEvent ae) {
+
+		TradeLibrary.getInstance().clearLibrary();
+		// TODO Clean layouts
 		ae.consume();
 	}
 
-	private void createLayoutFromOrder(Order newOrder) {
-		LOGGER.info("Creating layout for order\n" + newOrder.toXML());
-
+	private void addNewOrder(Order newOrder) {
+		LOGGER.info("Creating layout for order\n" + newOrder.toString());
 		// TODO Layout?
-
 	}
 }
