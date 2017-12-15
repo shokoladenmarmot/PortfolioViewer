@@ -2,12 +2,14 @@ package exchanges;
 
 import java.text.SimpleDateFormat;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.logging.Logger;
+import javafx.util.Pair;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -52,23 +54,27 @@ public class Kraken extends Exchange {
 			Set<String> symbols = new TreeSet<String>();
 			symbols = ((JSONObject) result.get("result")).keySet();
 
+			HashMap<String, String> symbolAltname = new HashMap<String, String>();
 			for (String symb : symbols) {
 
 				String altName = ((JSONObject) result.get("result")).getJSONObject(symb).getString("altname");
-				List<String> pairsForSymbol;
-				for (String p : pairSet) {
+				symbolAltname.put(symb, altName);
+			}
 
-					String pair = p;
+			for (String symb : symbolAltname.keySet()) {
+				String altName = symbolAltname.get(symb);
+				List<Pair<String, String>> list = new LinkedList<Pair<String, String>>();
+
+				for (String pair : pairSet) {
 					if (pair.startsWith(symb)) {
-
+						String otherEnd = symbolAltname.get(pair.substring(symb.length()));
+						list.add(new Pair<String, String>(otherEnd, pair));
 					} else if (pair.endsWith(symb)) {
-
+						String otherEnd = symbolAltname.get(pair.substring(0, pair.lastIndexOf(symb) - 1));
+						list.add(new Pair<String, String>(otherEnd, pair));
 					}
 				}
-				coinMap.put(altName, pairsForSymbol);
-				// ((JSONObject)result.get("result")).getJSONObject(symb).get("altname"));
-				// System.out.println((((JSONObject)
-				// result.get("result")).getJSONObject(symb).get("altname")).toString(2));
+				coinMap.put(altName, list);
 			}
 
 		}).start();
