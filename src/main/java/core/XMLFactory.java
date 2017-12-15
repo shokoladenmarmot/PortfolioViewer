@@ -42,7 +42,18 @@ public class XMLFactory {
 
 					// TODO Import configurations
 					// NodeList configs = top.getElementsByTagName("configs");
-					// NodeList version = top.getElementsByTagName("version");
+					NodeList parsedVersion = top.getElementsByTagName("version");
+					for (int i = 0; i < parsedVersion.getLength(); i++) {
+						Node versionNode = parsedVersion.item(i);
+						if (versionNode.getNodeType() == Node.ELEMENT_NODE) {
+							float ver = Float.parseFloat(((Element) versionNode).getTextContent());
+							if (version < ver) {
+								LOGGER.warning("Loading FAILED.\nIncompatable XML version: " + ver);
+								return;
+							}
+						}
+					}
+
 					NodeList orders = top.getElementsByTagName("orders");
 
 					for (int i = 0; i < orders.getLength(); i++) {

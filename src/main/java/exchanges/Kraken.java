@@ -4,7 +4,9 @@ import java.text.SimpleDateFormat;
 import java.util.GregorianCalendar;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.TimeZone;
+import java.util.TreeSet;
 import java.util.logging.Logger;
 
 import org.json.JSONArray;
@@ -26,8 +28,6 @@ public class Kraken extends Exchange {
 		logo = null;
 		url = "https://api.kraken.com/0/public/";
 
-		defaultPairList.add("BCHUSD");
-		availablePairList.addAll(defaultPairList);
 		populateListOfPairs();
 	}
 
@@ -36,10 +36,40 @@ public class Kraken extends Exchange {
 
 		LOGGER.info("Populate list of pairs");
 		new Thread(() -> {
+
+			// Get all tradable pairs
 			JSONObject result = JSONFactory.getJSONObject(url + "AssetPairs");
 			if (result == null)
 				return;
-			availablePairList.addAll(((JSONObject) result.get("result")).keySet());
+
+			Set<String> pairSet = ((JSONObject) result.get("result")).keySet();
+
+			// Get all currencies
+			result = JSONFactory.getJSONObject(url + "Assets");
+			if (result == null)
+				return;
+
+			Set<String> symbols = new TreeSet<String>();
+			symbols = ((JSONObject) result.get("result")).keySet();
+
+			for (String symb : symbols) {
+
+				String altName = ((JSONObject) result.get("result")).getJSONObject(symb).getString("altname");
+				List<String> pairsForSymbol;
+				for (String p : pairSet) {
+
+					String pair = p;
+					if (pair.startsWith(symb)) {
+
+					} else if (pair.endsWith(symb)) {
+
+					}
+				}
+				coinMap.put(altName, pairsForSymbol);
+				// ((JSONObject)result.get("result")).getJSONObject(symb).get("altname"));
+				// System.out.println((((JSONObject)
+				// result.get("result")).getJSONObject(symb).get("altname")).toString(2));
+			}
 
 		}).start();
 	}
