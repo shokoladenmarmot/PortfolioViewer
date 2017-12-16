@@ -145,18 +145,14 @@ public class ChartController implements Initializable {
 
 	private void updateChart() {
 
-		if (exchange.getDate().isEmpty()) {
-		} else {
-			btcchart.getData().clear();
-			Series<String, Double> series1 = new XYChart.Series<String, Double>();
+		btcchart.getData().clear();
+		Series<String, Double> series1 = new XYChart.Series<String, Double>();
 
-			exchange.getDate().get("BCHUSD").forEach(pd -> {
-				series1.getData().add(new Data<String, Double>(pd.getDate(), pd.getValue()));
+		exchange.getData("BCH", "USD", 1440).forEach(pd -> {
+			series1.getData().add(new Data<String, Double>(pd.getDate(), pd.getValue()));
 
-			});
+		});
 
-			btcchart.getData().add(series1);
-		}
+		btcchart.getData().add(series1);
 	}
-
 }

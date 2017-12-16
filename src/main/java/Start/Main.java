@@ -35,17 +35,19 @@ public class Main extends Application {
 	}
 
 	/**
-	 * Create threads for updating every exchange.
+	 * Initialize all exchanges.
 	 */
 	private void initialize() {
-
+		// threadExc.scheduleWithFixedDelay(new Runnable() {
+		// @Override
+		// public void run() {
+		// ep.getInstance().initiate();
+		// }
+		// }, 0, 10, TimeUnit.SECONDS);
 		for (ExchangeProvider ep : ExchangeProvider.values()) {
-			threadExc.scheduleWithFixedDelay(new Runnable() {
-				@Override
-				public void run() {
-					ep.getInstance().update();
-				}
-			}, 0, 10, TimeUnit.SECONDS);
+			threadExc.execute(() -> {
+				ep.getInstance().initiate();
+			});
 		}
 	}
 

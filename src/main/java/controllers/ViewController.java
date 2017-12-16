@@ -72,7 +72,7 @@ public class ViewController implements Initializable {
 			boolean isEmpty = symbolList.isEmpty();
 			while (isEmpty) {
 				for (ExchangeProvider ep : ExchangeProvider.values()) {
-					symbolList.addAll(ep.getInstance().getAvailablePairList());
+					symbolList.addAll(ep.getInstance().getAvailableCurrency());
 				}
 				isEmpty = symbolList.isEmpty();
 				if (isEmpty) {

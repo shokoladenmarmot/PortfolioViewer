@@ -13,22 +13,24 @@ public class Coinbase extends Exchange {
 		exchangeName = "Coinbase";
 		logo = null;
 		url = "";
-
-		populateListOfPairs();
 	}
 
 	@Override
 	public void updateOLHC(String pair, int interval) {
-		super.updateOLHC(pair, interval);
 
 		LOGGER.info("Update " + pair + ":" + interval);
 
-		lastData.clear();
 	}
 
 	@Override
-	protected void populateListOfPairs() {
-		LOGGER.info("Populate list of pairs");
+	public void initiate() {
+		synchronized (Coinbase.class) {
+			if (getStatus() == Status.INIT) {
+				LOGGER.info("Start: Populate list of pairs");
+				setStatus(Status.READY);
+				LOGGER.info("Finish: Populate list of pairs");
+			}
+		}
 	}
 
 	@Override

@@ -7,8 +7,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.TreeSet;
 import java.util.logging.Logger;
+
 import javafx.util.Pair;
 
 import org.json.JSONArray;
@@ -29,63 +29,66 @@ public class Kraken extends Exchange {
 		exchangeName = "Kraken";
 		logo = null;
 		url = "https://api.kraken.com/0/public/";
-
-		populateListOfPairs();
 	}
 
 	@Override
-	protected void populateListOfPairs() {
+	public void initiate() {
 
-		LOGGER.info("Populate list of pairs");
-		new Thread(() -> {
+		synchronized (Kraken.class) {
+			if (getStatus() == Status.INIT) {
+				LOGGER.info("Start: Populate list of pairs");
 
-			// Get all tradable pairs
-			JSONObject result = JSONFactory.getJSONObject(url + "AssetPairs");
-			if (result == null)
-				return;
+				// Get all currencies
+				JSONObject result = JSONFactory.getJSONObject(url + "Assets");
+				if (result == null)
+					return;
 
-			Set<String> pairSet = ((JSONObject) result.get("result")).keySet();
+				Set<String> symbols = ((JSONObject) result.get("result")).keySet();
 
-			// Get all currencies
-			result = JSONFactory.getJSONObject(url + "Assets");
-			if (result == null)
-				return;
+				HashMap<String, String> symbolAltname = new HashMap<String, String>();
+				for (String symb : symbols) {
 
-			Set<String> symbols = new TreeSet<String>();
-			symbols = ((JSONObject) result.get("result")).keySet();
+					String altName = ((JSONObject) result.get("result")).getJSONObject(symb).getString("altname");
+					symbolAltname.put(symb, altName);
+					List<Pair<String, String>> list = new LinkedList<Pair<String, String>>();
+					coinMap.put(altName, list);
+				}
 
-			HashMap<String, String> symbolAltname = new HashMap<String, String>();
-			for (String symb : symbols) {
+				// Get all tradable pairs
+				result = JSONFactory.getJSONObject(url + "AssetPairs");
+				if (result == null)
+					return;
 
-				String altName = ((JSONObject) result.get("result")).getJSONObject(symb).getString("altname");
-				symbolAltname.put(symb, altName);
-			}
-
-			for (String symb : symbolAltname.keySet()) {
-				String altName = symbolAltname.get(symb);
-				List<Pair<String, String>> list = new LinkedList<Pair<String, String>>();
+				Set<String> pairSet = ((JSONObject) result.get("result")).keySet();
 
 				for (String pair : pairSet) {
-					if (pair.startsWith(symb)) {
-						String otherEnd = symbolAltname.get(pair.substring(symb.length()));
-						list.add(new Pair<String, String>(otherEnd, pair));
-					} else if (pair.endsWith(symb)) {
-						String otherEnd = symbolAltname.get(pair.substring(0, pair.lastIndexOf(symb) - 1));
-						list.add(new Pair<String, String>(otherEnd, pair));
-					}
-				}
-				coinMap.put(altName, list);
-			}
 
-		}).start();
+					// Don't take dark pools
+					if (pair.endsWith(".d"))
+						continue;
+
+					// String altName = ((JSONObject)
+					// result.get("result")).getJSONObject(pair).getString("altname");
+
+					String quote = symbolAltname
+							.get(((JSONObject) result.get("result")).getJSONObject(pair).getString("quote"));
+					String base = symbolAltname
+							.get(((JSONObject) result.get("result")).getJSONObject(pair).getString("base"));
+
+					List<Pair<String, String>> quoteList = coinMap.get(quote);
+					List<Pair<String, String>> baseList = coinMap.get(base);
+
+					quoteList.add(new Pair<String, String>(base, pair));
+					baseList.add(new Pair<String, String>(quote, pair));
+				}
+				setStatus(Status.READY);
+				LOGGER.info("Finish: Populate list of pairs");
+			}
+		}
 	}
 
 	@Override
 	public void updateOLHC(String pair, int interval) {
-		if (availablePairList.contains(pair) == false) {
-			return;
-		}
-		super.updateOLHC(pair, interval);
 
 		LOGGER.info("Update " + pair + ":" + interval);
 
@@ -102,21 +105,15 @@ public class Kraken extends Exchange {
 			final GregorianCalendar gc = (GregorianCalendar) GregorianCalendar.getInstance(TimeZone.getTimeZone("GMT"));
 			SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy");
 
-			lastData.remove(pair);
-
-			// Note: A request to lastData at this moment will result in an empty map,
-			// therefore we need a cached version to be used on request.
-			List<PairData> newList = new LinkedList<PairData>();
+			List<PairData> dataList = new LinkedList<PairData>();
 
 			for (int i = 0; i < asArray.length(); ++i) {
 				JSONArray content = asArray.getJSONArray(i);
 				// Time is in second so we need to convert to millisec
 				gc.setTimeInMillis(content.getLong(0) * 1000);
-				newList.add(new PairData(dateFormat.format(gc.getTime()), Double.parseDouble(content.getString(4))));
+				dataList.add(new PairData(dateFormat.format(gc.getTime()), Double.parseDouble(content.getString(4))));
 			}
-
-			lastData.put(pair, newList);
-			cached.put(pair, newList);
+			addToCache(pair, interval, dataList);
 		}
 	}
 
