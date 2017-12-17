@@ -5,53 +5,74 @@ import java.util.logging.Logger;
 
 public class Order {
 
-	public enum OrderType {
-		INPUT, OUTPUT;
-
-		public String toString() {
-			return (this == OUTPUT) ? "OUTPUT" : "INPUT";
-		}
-
-		public static OrderType get(String t) {
-			return t.equalsIgnoreCase("INPUT") ? INPUT : (t.equalsIgnoreCase("OUTPUT")) ? OUTPUT : null;
-		}
-	}
+	// public enum OrderType {
+	// INPUT, OUTPUT;
+	//
+	// public String toString() {
+	// return (this == OUTPUT) ? "OUTPUT" : "INPUT";
+	// }
+	//
+	// public static OrderType get(String t) {
+	// return t.equalsIgnoreCase("INPUT") ? INPUT : (t.equalsIgnoreCase("OUTPUT")) ?
+	// OUTPUT : null;
+	// }
+	// }
 
 	private static final Logger LOGGER = Logger.getLogger(Order.class.getName());
 
-	// The pair symbol
+	// The market symbol
 	public final String symbol;
 
-	// Amount send/received
-	public final Double amount;
+	// Name of the exchange
+	public final String market;
 
-	// Type of order INPUT/OUTPUT
-	public final OrderType type;
+	// The from currency
+	public final String from;
+
+	// The to currency
+	public final String to;
+
+	// Amount spend
+	public final Double amountSpend;
+
+	// Amount spend
+	public final Double amountRecieved;
 
 	// Date in unix time stamp ( seconds )
 	public final long date;
 
-	public Order(String s, Double a, OrderType t, long d) {
+	public Order(String s, String m, String f, String t, Double as, Double ar, long d) {
 		symbol = s;
-		amount = a;
-		type = t;
+		market = m;
+		from = f;
+		to = t;
+		amountSpend = as;
+		amountRecieved = ar;
 		date = d;
+	}
+
+	public String getFrom() {
+		return from;
+	}
+
+	public String getTo() {
+		return to;
 	}
 
 	public long getDate() {
 		return date;
 	}
 
-	public Double getAmount() {
-		return amount;
+	public Double getAmountSpend() {
+		return amountSpend;
+	}
+
+	public Double getAmountRecieved() {
+		return amountRecieved;
 	}
 
 	public String getSymbol() {
 		return symbol;
-	}
-
-	public OrderType getType() {
-		return type;
 	}
 
 	@Override
@@ -60,10 +81,22 @@ public class Order {
 
 		sb.append("\nSymbol: ");
 		sb.append(symbol);
-		sb.append("\nType: ");
-		sb.append(type.toString());
-		sb.append("\nAmount: ");
-		sb.append(amount);
+
+		sb.append("\nMarket: ");
+		sb.append(market);
+
+		sb.append("\nFrom: ");
+		sb.append(from);
+
+		sb.append("\nTo: ");
+		sb.append(to);
+
+		sb.append("\nAmount Spend: ");
+		sb.append(amountSpend);
+
+		sb.append("\nAmount Recieved: ");
+		sb.append(amountRecieved);
+
 		sb.append("\nDate: ");
 		sb.append(new SimpleDateFormat("dd-MMM-yyyy").format(date * 1000).toString());
 
@@ -77,12 +110,21 @@ public class Order {
 		sb.append("<symbol>");
 		sb.append(symbol);
 		sb.append("</symbol>\n");
-		sb.append("<amount>");
-		sb.append(amount);
-		sb.append("</amount>\n");
-		sb.append("<type>");
-		sb.append(type.toString());
-		sb.append("</type>\n");
+		sb.append("<market>");
+		sb.append(market);
+		sb.append("</market>\n");
+		sb.append("<from>");
+		sb.append(from);
+		sb.append("</from>\n");
+		sb.append("<to>");
+		sb.append(to);
+		sb.append("</to>\n");
+		sb.append("<amountspend>");
+		sb.append(amountSpend);
+		sb.append("</amountspend>\n");
+		sb.append("<amountrecieved>");
+		sb.append(amountRecieved);
+		sb.append("</amountrecieved>\n");
 		sb.append("<date>");
 		sb.append(date);
 		sb.append("</date>\n");

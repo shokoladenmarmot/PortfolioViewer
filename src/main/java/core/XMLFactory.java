@@ -19,7 +19,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import Start.Main;
-import core.Order.OrderType;
 
 public class XMLFactory {
 	private static final Logger LOGGER = Logger.getLogger(XMLFactory.class.getName());
@@ -68,13 +67,18 @@ public class XMLFactory {
 								Element asElement = (Element) order;
 								try {
 									String symbol = asElement.getElementsByTagName("symbol").item(0).getTextContent();
-									Double amount = Double.parseDouble(
-											asElement.getElementsByTagName("amount").item(0).getTextContent());
-									OrderType type = OrderType
-											.get(asElement.getElementsByTagName("type").item(0).getTextContent());
+									String market = asElement.getElementsByTagName("market").item(0).getTextContent();
+									String from = asElement.getElementsByTagName("from").item(0).getTextContent();
+									String to = asElement.getElementsByTagName("to").item(0).getTextContent();
+									Double amountspend = Double.parseDouble(
+											asElement.getElementsByTagName("amountspend").item(0).getTextContent());
+									Double amountrecieved = Double.parseDouble(
+											asElement.getElementsByTagName("amountrecieved").item(0).getTextContent());
 									long date = Long
 											.parseLong(asElement.getElementsByTagName("date").item(0).getTextContent());
-									Order newOrder = new Order(symbol, amount, type, date);
+
+									Order newOrder = new Order(symbol, market, from, to, amountspend, amountrecieved,
+											date);
 									list.add(newOrder);
 								} catch (Exception e) {
 									LOGGER.warning(e.getMessage());

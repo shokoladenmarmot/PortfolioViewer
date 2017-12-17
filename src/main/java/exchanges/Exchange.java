@@ -88,6 +88,14 @@ public abstract class Exchange {
 		return Collections.emptyList();
 	}
 
+	public final List<Pair<String, String>> getCurrencyFromCurrency(String currency) {
+		if (getStatus() != Status.INIT) {
+			List<Pair<String, String>> result = coinMap.get(currency);
+			return (result != null) ? result : Collections.emptyList();
+		}
+		return Collections.emptyList();
+	}
+
 	public final List<Pair<String, String>> getPairsForCurrency(String currency) {
 		if (getStatus() != Status.INIT) {
 			return coinMap.get(currency);
@@ -95,7 +103,7 @@ public abstract class Exchange {
 		return Collections.emptyList();
 	}
 
-	private final String getPairName(String from, String to) {
+	public final String getPairName(String from, String to) {
 		if (getStatus() != Status.INIT) {
 			if (coinMap.containsKey(from)) {
 				for (Pair<String, String> pair : coinMap.get(from)) {
