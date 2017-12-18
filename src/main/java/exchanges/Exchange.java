@@ -20,6 +20,7 @@ public abstract class Exchange {
 	}
 
 	private static final Logger LOGGER = Logger.getLogger(Exchange.class.getName());
+	public static final Double INVALID_VALUE = new Double(-1);
 
 	public class PairData {
 
@@ -54,7 +55,11 @@ public abstract class Exchange {
 	// Coin name -> {[Coin name, Pair]}
 	protected Map<String, List<Pair<String, String>>> coinMap;
 
-	private HashMap<String, List<Pair<Integer, Collection<PairData>>>> cachedData;
+	// Map storing OHLC data
+	private HashMap<String, List<Pair<Integer, Collection<PairData>>>> cachedOHLC;
+
+	// Map storing current price
+	private HashMap<String, Double> cachedCurrent;
 
 	public Exchange() {
 		init();
@@ -65,7 +70,8 @@ public abstract class Exchange {
 
 		lastUpdate = new AtomicLong();
 		coinMap = new HashMap<String, List<Pair<String, String>>>();
-		cachedData = new HashMap<String, List<Pair<Integer, Collection<PairData>>>>();
+		cachedOHLC = new HashMap<String, List<Pair<Integer, Collection<PairData>>>>();
+		cachedCurrent = new HashMap<String, Double>();
 	}
 
 	public final String getName() {
@@ -116,24 +122,24 @@ public abstract class Exchange {
 		return null;
 	}
 
-	public final Collection<PairData> getData(String from, String to, int interval) {
+	public final Collection<PairData> getOHLCData(String from, String to, int interval) {
 
 		String pair = getPairName(from, to);
 		if (pair != null) {
-			Collection<PairData> result = getFromCache(pair, interval);
+			Collection<PairData> result = getFromOHLCCache(pair, interval);
 			if (result.isEmpty()) {
 				updateOLHC(pair, interval);
 			}
-			return getFromCache(pair, interval);
+			return getFromOHLCCache(pair, interval);
 		}
 		return Collections.emptyList();
 	}
 
-	protected final void addToCache(String pair, int interval, Collection<PairData> data) {
-		synchronized (cachedData) {
+	protected final void addToOHLCCache(String pair, int interval, Collection<PairData> data) {
+		synchronized (cachedOHLC) {
 
 			Pair<Integer, Collection<PairData>> newData = new Pair<Integer, Collection<PairData>>(interval, data);
-			List<Pair<Integer, Collection<PairData>>> currentPairRecord = cachedData.get(pair);
+			List<Pair<Integer, Collection<PairData>>> currentPairRecord = cachedOHLC.get(pair);
 
 			if (currentPairRecord == null) {
 				currentPairRecord = new LinkedList<Pair<Integer, Collection<PairData>>>();
@@ -142,20 +148,53 @@ public abstract class Exchange {
 						.collect(Collectors.toList());
 			}
 			currentPairRecord.add(newData);
-			cachedData.put(pair, currentPairRecord);
+			cachedOHLC.put(pair, currentPairRecord);
 		}
 	}
 
-	private final Collection<PairData> getFromCache(String pair, int interval) {
-		synchronized (cachedData) {
-			if (cachedData.containsKey(pair)) {
-				for (Pair<Integer, Collection<PairData>> data : cachedData.get(pair)) {
+	private final Collection<PairData> getFromOHLCCache(String pair, int interval) {
+		synchronized (cachedOHLC) {
+			if (cachedOHLC.containsKey(pair)) {
+				for (Pair<Integer, Collection<PairData>> data : cachedOHLC.get(pair)) {
 					if (data.getKey() == interval) {
 						return new LinkedList<PairData>(data.getValue());
 					}
 				}
 			}
 			return Collections.emptyList();
+		}
+	}
+
+	public final Double getCurrentData(String from, String to) {
+
+		String pair = getPairName(from, to);
+		if (pair != null) {
+			return getCurrentData(pair);
+		}
+		return INVALID_VALUE;
+	}
+
+	public final Double getCurrentData(String symbol) {
+		Double result = getFromCurrentCache(symbol);
+		if (result == INVALID_VALUE) {
+			updateCurrent(symbol);
+			// TODO Put a scheduleThread to updateCurrent(symbol)
+		}
+		return getFromCurrentCache(symbol);
+	}
+
+	protected final void addToCurrentCache(String pair, Double data) {
+		synchronized (cachedCurrent) {
+			cachedCurrent.put(pair, data);
+		}
+	}
+
+	private final Double getFromCurrentCache(String pair) {
+		synchronized (cachedCurrent) {
+			if (cachedCurrent.containsKey(pair)) {
+				return new Double(cachedCurrent.get(pair));
+			}
+			return INVALID_VALUE;
 		}
 	}
 
@@ -179,6 +218,8 @@ public abstract class Exchange {
 	abstract public void initiate();
 
 	abstract protected void updateOLHC(String pair, int interval);
+
+	abstract protected void updateCurrent(String symbol);
 
 	abstract protected void updateLastTime();
 }

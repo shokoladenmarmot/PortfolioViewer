@@ -113,7 +113,7 @@ public class Kraken extends Exchange {
 				gc.setTimeInMillis(content.getLong(0) * 1000);
 				dataList.add(new PairData(dateFormat.format(gc.getTime()), Double.parseDouble(content.getString(4))));
 			}
-			addToCache(pair, interval, dataList);
+			addToOHLCCache(pair, interval, dataList);
 		}
 	}
 
@@ -126,5 +126,16 @@ public class Kraken extends Exchange {
 			return;
 
 		lastUpdate.set(Long.parseLong(((JSONObject) result.get("result")).get("unixtime").toString()));
+	}
+
+	@Override
+	protected void updateCurrent(String symbol) {
+		LOGGER.info("Update symbol:" + symbol);
+
+		JSONObject result = JSONFactory.getJSONObject(url + "Ticker?pair=" + symbol);
+
+		// Last price for last trade
+		addToCurrentCache(symbol, Double
+				.parseDouble(((JSONObject) result.get("result")).getJSONObject(symbol).getJSONArray("c").getString(0)));
 	}
 }

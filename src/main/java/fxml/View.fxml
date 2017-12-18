@@ -1,19 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.ViewController">
+<VBox fillWidth="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.ViewController">
    <children>
-      <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="20.0">
+      <HBox alignment="CENTER" prefHeight="40.0" prefWidth="600.0" spacing="20.0">
          <children>
             <Button fx:id="addButton" mnemonicParsing="false" onAction="#addNewTrade" text="New" />
-            <Button fx:id="saveButton" mnemonicParsing="false" text="Save" onAction="#saveTemplate"/>
-            <Button fx:id="loadButton" mnemonicParsing="false" text="Load" onAction="#loadTemplate" />
-            <Button fx:id="clearButton" mnemonicParsing="false" text="Clear" onAction="#clearTemplate"/>
+            <Button fx:id="saveButton" mnemonicParsing="false" onAction="#saveTemplate" text="Save" />
+            <Button fx:id="loadButton" mnemonicParsing="false" onAction="#loadTemplate" text="Load" />
+            <Button fx:id="clearButton" mnemonicParsing="false" onAction="#clearTemplate" text="Clear" />
          </children>
       </HBox>
-      <VBox fx:id="operationalLayout" prefHeight="200.0" prefWidth="100.0" />
+      <ScrollPane >
+         <content>
+            <VBox fx:id="operationalLayout" />
+         </content>
+      </ScrollPane>
    </children>
 </VBox>

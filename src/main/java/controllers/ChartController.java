@@ -148,7 +148,7 @@ public class ChartController implements Initializable {
 		btcchart.getData().clear();
 		Series<String, Double> series1 = new XYChart.Series<String, Double>();
 
-		exchange.getData("BCH", "USD", 1440).forEach(pd -> {
+		exchange.getOHLCData("XBT", "USD", 1440).forEach(pd -> {
 			series1.getData().add(new Data<String, Double>(pd.getDate(), pd.getValue()));
 
 		});

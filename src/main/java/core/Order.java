@@ -21,25 +21,25 @@ public class Order {
 	private static final Logger LOGGER = Logger.getLogger(Order.class.getName());
 
 	// The market symbol
-	public final String symbol;
+	private final String symbol;
 
 	// Name of the exchange
-	public final String market;
+	private final String market;
 
 	// The from currency
-	public final String from;
+	private final String from;
 
 	// The to currency
-	public final String to;
+	private final String to;
 
 	// Amount spend
-	public final Double amountSpend;
+	private final Double amountSpend;
 
 	// Amount spend
-	public final Double amountRecieved;
+	private final Double amountRecieved;
 
 	// Date in unix time stamp ( seconds )
-	public final long date;
+	private final long date;
 
 	public Order(String s, String m, String f, String t, Double as, Double ar, long d) {
 		symbol = s;
@@ -75,6 +75,10 @@ public class Order {
 		return symbol;
 	}
 
+	public String getMarket() {
+		return market;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -98,9 +102,13 @@ public class Order {
 		sb.append(amountRecieved);
 
 		sb.append("\nDate: ");
-		sb.append(new SimpleDateFormat("dd-MMM-yyyy").format(date * 1000).toString());
+		sb.append(getDateToString());
 
 		return sb.toString();
+	}
+
+	public String getDateToString() {
+		return new SimpleDateFormat("dd-MMM-yyyy").format(date * 1000).toString();
 	}
 
 	public String toXML() {
