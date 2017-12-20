@@ -74,11 +74,11 @@ public class ViewController implements Initializable {
 	@FXML
 	private Button loadButton;
 
-	private Map<String, GridPane> recordsMap;
+	private Map<String, TableView> recordsMap;
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		recordsMap = new HashMap<String, GridPane>();
+		recordsMap = new HashMap<String, TableView>();
 	}
 
 	public void addNewTrade(ActionEvent ae) {
@@ -303,262 +303,157 @@ public class ViewController implements Initializable {
 
 	private void addNewOrder(Order newOrder) {
 
-		GridPane[] grids = new GridPane[2];
-		grids[0] = recordsMap.get(newOrder.getFrom());
-		grids[1] = recordsMap.get(newOrder.getTo());
+		TableView[] tables = new TableView[2];
+		tables[0] = recordsMap.get(newOrder.getFrom());
+		tables[1] = recordsMap.get(newOrder.getTo());
 
-		TableView<Order>[] tables = new TableView[2];
-
-		if (grids[0] == null) {
-
-			grids[0] = new GridPane();
-			tables[0] = new TableView<>();
-
-			TableView<Order> table = tables[0];
-			table.setEditable(false);
-			table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
-			// TODO put hints for headers
-			TableColumn<Order, ImageView> orderType = new TableColumn<>("Type");
-			orderType.setCellValueFactory(
-					new Callback<CellDataFeatures<Order, ImageView>, ObservableValue<ImageView>>() {
-						public ObservableValue<ImageView> call(CellDataFeatures<Order, ImageView> data) {
-							if (data.getValue().getFrom().equals(newOrder.getFrom())) {
-								return new SimpleObjectProperty<ImageView>(new ImageView(new Image(
-										getClass().getResourceAsStream("/icons/down.png"), 16, 16, true, true)));
-							} else {
-								return new SimpleObjectProperty<ImageView>(new ImageView(new Image(
-										getClass().getResourceAsStream("/icons/up.png"), 16, 16, true, true)));
-							}
-						}
-					});
-			orderType.setStyle("-fx-alignment: CENTER;");
-			orderType.setResizable(false);
-
-			TableColumn<Order, Double> amountCurrent = new TableColumn<>("Amount");
-			amountCurrent.setCellValueFactory(new Callback<CellDataFeatures<Order, Double>, ObservableValue<Double>>() {
-				public ObservableValue<Double> call(CellDataFeatures<Order, Double> data) {
-
-					if (data.getValue().getFrom().equals(newOrder.getFrom())) {
-						return new SimpleDoubleProperty(data.getValue().getAmountSpend()).asObject();
-					} else {
-						return new SimpleDoubleProperty(data.getValue().getAmountRecieved()).asObject();
-					}
-				}
-			});
-			amountCurrent.setStyle("-fx-alignment: CENTER;");
-			amountCurrent.setResizable(false);
-
-			TableColumn<Order, String> symbol = new TableColumn<>("For");
-			symbol.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
-				public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
-					if (data.getValue().getFrom().equals(newOrder.getFrom())) {
-						return new SimpleStringProperty(data.getValue().getTo());
-					} else {
-						return new SimpleStringProperty(data.getValue().getFrom());
-					}
-				}
-			});
-			symbol.setStyle("-fx-alignment: CENTER;");
-			symbol.setResizable(false);
-
-			TableColumn<Order, Double> amountSymbol = new TableColumn<>("Amount");
-			amountSymbol.setCellValueFactory(new Callback<CellDataFeatures<Order, Double>, ObservableValue<Double>>() {
-				public ObservableValue<Double> call(CellDataFeatures<Order, Double> data) {
-					if (data.getValue().getFrom().equals(newOrder.getFrom())) {
-						return new SimpleDoubleProperty(data.getValue().getAmountRecieved()).asObject();
-					} else {
-						return new SimpleDoubleProperty(data.getValue().getAmountSpend()).asObject();
-					}
-				}
-			});
-			amountSymbol.setStyle("-fx-alignment: CENTER;");
-			amountSymbol.setResizable(false);
-
-			TableColumn<Order, String> price = new TableColumn<>("Price");
-			price.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
-				public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
-					if (data.getValue().getFrom().equals(newOrder.getFrom())) {
-						return Bindings.format("%.5f",
-								(data.getValue().getAmountRecieved() / data.getValue().getAmountSpend()));
-					} else {
-						return Bindings.format("%.5f",
-								(data.getValue().getAmountSpend() / data.getValue().getAmountRecieved()));
-					}
-				}
-			});
-			price.setStyle("-fx-alignment: CENTER;");
-			price.setResizable(false);
-
-			TableColumn<Order, String> exchange = new TableColumn<>("Market");
-			exchange.setCellValueFactory(new PropertyValueFactory<Order, String>("market"));
-			exchange.setStyle("-fx-alignment: CENTER;");
-			exchange.setResizable(false);
-
-			TableColumn<Order, String> date = new TableColumn<>("Date");
-			date.setCellValueFactory(cellData -> new ReadOnlyStringWrapper(cellData.getValue().getDateToString()));
-			date.setStyle("-fx-alignment: CENTER;");
-			date.setResizable(false);
-
-			TableColumn<Order, String> current = new TableColumn<>("Current Price");
-			current.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
-				public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
-
-					Double val = Arrays.asList(ExchangeProvider.values()).stream()
-							.filter(e -> e.getInstance().getName().equals(data.getValue().getMarket())).findFirst()
-							.get().getInstance().getCurrentData(data.getValue().getSymbol());
-
-					return Bindings.format("%.7f", val);
-				}
-			});
-			current.setStyle("-fx-alignment: CENTER;");
-			current.setResizable(false);
-
-			table.getColumns().addAll(orderType, amountCurrent, symbol, amountSymbol, price, exchange, date, current);
-
-			ScrollPane sp = new ScrollPane();
-			sp.setFitToWidth(true);
-			sp.setContent(table);
-			sp.setVbarPolicy(ScrollBarPolicy.ALWAYS);
-
-			grids[0].setHgap(10);
-			grids[0].setVgap(10);
-			grids[0].setPadding(new Insets(10, 10, 10, 10));
-			grids[0].add(new Label(newOrder.getFrom()), 0, 0);
-			grids[0].add(sp, 0, 1);
-
-			operationalLayout.getChildren().add(grids[0]);
-			recordsMap.put(newOrder.getFrom(), grids[0]);
-		} else {
-			tables[0] = (TableView) grids[0].getChildren().get(1);
+		if (tables[0] == null) {
+			tables[0] = createNewTableForOrder(newOrder.getFrom(), newOrder);
 		}
 
-		if (grids[1] == null) {
-
-			grids[1] = new GridPane();
-			tables[1] = new TableView<>();
-
-			TableView<Order> table = tables[1];
-			table.setEditable(false);
-			table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
-			// TODO put hints for headers
-			TableColumn<Order, ImageView> orderType = new TableColumn<>("Type");
-			orderType.setCellValueFactory(
-					new Callback<CellDataFeatures<Order, ImageView>, ObservableValue<ImageView>>() {
-						public ObservableValue<ImageView> call(CellDataFeatures<Order, ImageView> data) {
-							if (data.getValue().getFrom().equals(newOrder.getFrom())) {
-								return new SimpleObjectProperty<ImageView>(new ImageView(new Image(
-										getClass().getResourceAsStream("/icons/up.png"), 16, 16, true, true)));
-							} else {
-								return new SimpleObjectProperty<ImageView>(new ImageView(new Image(
-										getClass().getResourceAsStream("/icons/down.png"), 16, 16, true, true)));
-							}
-						}
-					});
-			orderType.setStyle("-fx-alignment: CENTER;");
-			orderType.setResizable(false);
-
-			TableColumn<Order, Double> amountCurrent = new TableColumn<>("Amount");
-			amountCurrent.setCellValueFactory(new Callback<CellDataFeatures<Order, Double>, ObservableValue<Double>>() {
-				public ObservableValue<Double> call(CellDataFeatures<Order, Double> data) {
-
-					if (data.getValue().getFrom().equals(newOrder.getFrom())) {
-						return new SimpleDoubleProperty(data.getValue().getAmountRecieved()).asObject();
-					} else {
-						return new SimpleDoubleProperty(data.getValue().getAmountSpend()).asObject();
-					}
-				}
-			});
-			amountCurrent.setStyle("-fx-alignment: CENTER;");
-			amountCurrent.setResizable(false);
-
-			TableColumn<Order, String> symbol = new TableColumn<>("For");
-			symbol.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
-				public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
-					if (data.getValue().getFrom().equals(newOrder.getFrom())) {
-						return new SimpleStringProperty(data.getValue().getFrom());
-					} else {
-						return new SimpleStringProperty(data.getValue().getTo());
-					}
-				}
-			});
-			symbol.setStyle("-fx-alignment: CENTER;");
-			symbol.setResizable(false);
-
-			TableColumn<Order, Double> amountSymbol = new TableColumn<>("Amount");
-			amountSymbol.setCellValueFactory(new Callback<CellDataFeatures<Order, Double>, ObservableValue<Double>>() {
-				public ObservableValue<Double> call(CellDataFeatures<Order, Double> data) {
-					if (data.getValue().getFrom().equals(newOrder.getFrom())) {
-						return new SimpleDoubleProperty(data.getValue().getAmountSpend()).asObject();
-					} else {
-						return new SimpleDoubleProperty(data.getValue().getAmountRecieved()).asObject();
-					}
-				}
-			});
-
-			TableColumn<Order, String> price = new TableColumn<>("Price");
-			price.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
-				public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
-					if (data.getValue().getFrom().equals(newOrder.getFrom())) {
-						return Bindings.format("%.5f",
-								(data.getValue().getAmountSpend() / data.getValue().getAmountRecieved()));
-					} else {
-						return Bindings.format("%.5f",
-								(data.getValue().getAmountRecieved() / data.getValue().getAmountSpend()));
-					}
-				}
-			});
-			price.setStyle("-fx-alignment: CENTER;");
-			price.setResizable(false);
-
-			amountSymbol.setStyle("-fx-alignment: CENTER;");
-			amountSymbol.setResizable(false);
-
-			TableColumn<Order, String> exchange = new TableColumn<>("Market");
-			exchange.setCellValueFactory(new PropertyValueFactory<Order, String>("market"));
-			exchange.setStyle("-fx-alignment: CENTER;");
-			exchange.setResizable(false);
-
-			TableColumn<Order, String> date = new TableColumn<>("Date");
-			date.setCellValueFactory(cellData -> new ReadOnlyStringWrapper(cellData.getValue().getDateToString()));
-			date.setStyle("-fx-alignment: CENTER;");
-			date.setResizable(false);
-
-			TableColumn<Order, String> current = new TableColumn<>("Current Price");
-			current.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
-				public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
-
-					Double val = Arrays.asList(ExchangeProvider.values()).stream()
-							.filter(e -> e.getInstance().getName().equals(data.getValue().getMarket())).findFirst()
-							.get().getInstance().getCurrentData(data.getValue().getSymbol());
-
-					return Bindings.format("%.7f", val);
-				}
-			});
-			current.setStyle("-fx-alignment: CENTER;");
-			current.setResizable(false);
-
-			table.getColumns().addAll(orderType, amountCurrent, symbol, amountSymbol, price, exchange, date, current);
-
-			ScrollPane sp = new ScrollPane();
-			sp.setFitToWidth(true);
-			sp.setContent(table);
-			sp.setVbarPolicy(ScrollBarPolicy.ALWAYS);
-
-			grids[1].setHgap(10);
-			grids[1].setVgap(10);
-			grids[1].setPadding(new Insets(10, 10, 10, 10));
-
-			grids[1].add(new Label(newOrder.getTo()), 0, 0);
-			grids[1].add(sp, 0, 1);
-
-			operationalLayout.getChildren().add(grids[1]);
-			recordsMap.put(newOrder.getTo(), grids[1]);
-		} else {
-			tables[1] = (TableView<Order>) grids[1].getChildren().get(1);
+		if (tables[1] == null) {
+			tables[1] = createNewTableForOrder(newOrder.getTo(), newOrder);
 		}
+
 		tables[0].getItems().add(newOrder);
 		tables[1].getItems().add(newOrder);
+	}
+
+	private TableView createNewTableForOrder(String tableOwner, Order o) {
+		GridPane grid = new GridPane();
+		TableView<Order> table = new TableView<>();
+
+		table.setEditable(false);
+		table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+		// TODO put hints for headers
+		TableColumn<Order, ImageView> orderType = new TableColumn<>("Type");
+		orderType.setCellValueFactory(new Callback<CellDataFeatures<Order, ImageView>, ObservableValue<ImageView>>() {
+			public ObservableValue<ImageView> call(CellDataFeatures<Order, ImageView> data) {
+				if (data.getValue().getFrom().equals(tableOwner)) {
+					return new SimpleObjectProperty<ImageView>(new ImageView(
+							new Image(getClass().getResourceAsStream("/icons/down.png"), 16, 16, true, true)));
+				} else {
+					return new SimpleObjectProperty<ImageView>(new ImageView(
+							new Image(getClass().getResourceAsStream("/icons/up.png"), 16, 16, true, true)));
+				}
+			}
+		});
+
+		orderType.setStyle("-fx-alignment: CENTER;");
+		orderType.setResizable(false);
+
+		TableColumn<Order, Double> amountCurrent = new TableColumn<>("Amount");
+		amountCurrent.setCellValueFactory(new Callback<CellDataFeatures<Order, Double>, ObservableValue<Double>>() {
+			public ObservableValue<Double> call(CellDataFeatures<Order, Double> data) {
+
+				if (data.getValue().getFrom().equals(tableOwner)) {
+					return new SimpleDoubleProperty(data.getValue().getAmountSpend()).asObject();
+				} else {
+					return new SimpleDoubleProperty(data.getValue().getAmountRecieved()).asObject();
+				}
+			}
+		});
+		amountCurrent.setStyle("-fx-alignment: CENTER;");
+		amountCurrent.setResizable(false);
+
+		TableColumn<Order, String> symbol = new TableColumn<>("For");
+		symbol.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
+			public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
+				if (data.getValue().getFrom().equals(tableOwner)) {
+					return new SimpleStringProperty(data.getValue().getTo());
+				} else {
+					return new SimpleStringProperty(data.getValue().getFrom());
+				}
+			}
+		});
+		symbol.setStyle("-fx-alignment: CENTER;");
+		symbol.setResizable(false);
+
+		TableColumn<Order, Double> amountSymbol = new TableColumn<>("Amount");
+		amountSymbol.setCellValueFactory(new Callback<CellDataFeatures<Order, Double>, ObservableValue<Double>>() {
+			public ObservableValue<Double> call(CellDataFeatures<Order, Double> data) {
+				if (data.getValue().getFrom().equals(tableOwner)) {
+					return new SimpleDoubleProperty(data.getValue().getAmountRecieved()).asObject();
+				} else {
+					return new SimpleDoubleProperty(data.getValue().getAmountSpend()).asObject();
+				}
+			}
+		});
+		amountSymbol.setStyle("-fx-alignment: CENTER;");
+		amountSymbol.setResizable(false);
+
+		TableColumn<Order, String> price = new TableColumn<>("Price");
+		price.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
+			public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
+				if (data.getValue().getFrom().equals(tableOwner)) {
+					return Bindings.format("%.5f",
+							(data.getValue().getAmountRecieved() / data.getValue().getAmountSpend()));
+				} else {
+					return Bindings.format("%.5f",
+							(data.getValue().getAmountSpend() / data.getValue().getAmountRecieved()));
+				}
+			}
+		});		
+				
+		price.setStyle("-fx-alignment: CENTER;");
+		price.setResizable(false);
+
+		TableColumn<Order, String> exchange = new TableColumn<>("Market");
+		exchange.setCellValueFactory(new PropertyValueFactory<Order, String>("market"));
+		exchange.setStyle("-fx-alignment: CENTER;");
+		exchange.setResizable(false);
+
+		TableColumn<Order, String> date = new TableColumn<>("Date");
+		date.setCellValueFactory(cellData -> new ReadOnlyStringWrapper(cellData.getValue().getDateToString()));
+		date.setStyle("-fx-alignment: CENTER;");
+		date.setResizable(false);
+
+		TableColumn<Order, String> current = new TableColumn<>("Current Price");
+		current.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
+			public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
+
+				Double val = Arrays.asList(ExchangeProvider.values()).stream()
+						.filter(e -> e.getInstance().getName().equals(data.getValue().getMarket())).findFirst().get()
+						.getInstance().getCurrentData(data.getValue().getSymbol());
+				return Bindings.format("%.7f", val);
+			}
+		});
+
+		
+		// current.setCellFactory(tc -> new TableCell<Order, String>() {
+		//
+		// @Override
+		// protected void updateItem(final String item, boolean empty) {
+		// super.updateItem(item, empty);
+		// System.out.println("UPDATE " + this);
+		// if (item == null) {
+		// setText(null);
+		// setGraphic(null);
+		// return;
+		// }
+		// setText(item);
+		// }
+		// });
+		
+		current.setStyle("-fx-alignment: CENTER;");
+		current.setResizable(false);
+
+		table.getColumns().addAll(orderType, amountCurrent, symbol, amountSymbol, price, exchange, date, current);
+
+		ScrollPane sp = new ScrollPane();
+		sp.setFitToWidth(true);
+		sp.setContent(table);
+		// sp.setVbarPolicy(ScrollBarPolicy.ALWAYS);
+
+		grid.setHgap(10);
+		grid.setVgap(10);
+		grid.setPadding(new Insets(10, 10, 10, 10));
+		grid.add(new Label(tableOwner), 0, 0);
+		grid.add(sp, 0, 1);
+
+		operationalLayout.getChildren().add(grid);
+		recordsMap.put(tableOwner, table);
+		return table;
 	}
 }
