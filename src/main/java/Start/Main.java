@@ -19,7 +19,7 @@ public class Main extends Application {
 	private static Main instance;
 	private Stage myStage;
 
-	private final ScheduledThreadPoolExecutor threadExc = new ScheduledThreadPoolExecutor(2);
+	public final ScheduledThreadPoolExecutor threadExc = new ScheduledThreadPoolExecutor(5);
 
 	public static Main getInstance() {
 		return instance;

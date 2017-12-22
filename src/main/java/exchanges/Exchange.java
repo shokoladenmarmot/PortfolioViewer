@@ -8,8 +8,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
+import Start.Main;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.ObservableMap;
 import javafx.scene.image.Image;
 import javafx.util.Pair;
 
@@ -56,10 +60,10 @@ public abstract class Exchange {
 	protected Map<String, List<Pair<String, String>>> coinMap;
 
 	// Map storing OHLC data
-	private HashMap<String, List<Pair<Integer, Collection<PairData>>>> cachedOHLC;
+	private HashMap<String, List<Pair<Integer, ObservableList<PairData>>>> cachedOHLC;
 
 	// Map storing current price
-	private HashMap<String, Double> cachedCurrent;
+	private HashMap<String, SimpleDoubleProperty> cachedCurrent;
 
 	public Exchange() {
 		init();
@@ -70,8 +74,8 @@ public abstract class Exchange {
 
 		lastUpdate = new AtomicLong();
 		coinMap = new HashMap<String, List<Pair<String, String>>>();
-		cachedOHLC = new HashMap<String, List<Pair<Integer, Collection<PairData>>>>();
-		cachedCurrent = new HashMap<String, Double>();
+		cachedOHLC = new HashMap<String, List<Pair<Integer, ObservableList<PairData>>>>();
+		cachedCurrent = new HashMap<String, SimpleDoubleProperty>();
 	}
 
 	public final String getName() {
@@ -122,79 +126,106 @@ public abstract class Exchange {
 		return null;
 	}
 
-	public final Collection<PairData> getOHLCData(String from, String to, int interval) {
+	public final ObservableList<PairData> getOHLCData(String from, String to, int interval) {
 
 		String pair = getPairName(from, to);
 		if (pair != null) {
-			Collection<PairData> result = getFromOHLCCache(pair, interval);
+			ObservableList<PairData> result = getFromOHLCCache(pair, interval);
 			if (result.isEmpty()) {
-				updateOLHC(pair, interval);
+				Main.getInstance().threadExc.execute(() -> {
+					updateOLHC(pair, interval);
+				});
 			}
-			return getFromOHLCCache(pair, interval);
+			return result;
 		}
-		return Collections.emptyList();
+		return FXCollections.observableArrayList();
 	}
 
 	protected final void addToOHLCCache(String pair, int interval, Collection<PairData> data) {
 		synchronized (cachedOHLC) {
+			List<Pair<Integer, ObservableList<PairData>>> currentPairRecord = cachedOHLC.get(pair);
 
-			Pair<Integer, Collection<PairData>> newData = new Pair<Integer, Collection<PairData>>(interval, data);
-			List<Pair<Integer, Collection<PairData>>> currentPairRecord = cachedOHLC.get(pair);
-
-			if (currentPairRecord == null) {
-				currentPairRecord = new LinkedList<Pair<Integer, Collection<PairData>>>();
-			} else {
-				currentPairRecord = currentPairRecord.stream().filter(p -> p.getKey() != interval)
-						.collect(Collectors.toList());
-			}
-			currentPairRecord.add(newData);
-			cachedOHLC.put(pair, currentPairRecord);
-		}
-	}
-
-	private final Collection<PairData> getFromOHLCCache(String pair, int interval) {
-		synchronized (cachedOHLC) {
-			if (cachedOHLC.containsKey(pair)) {
-				for (Pair<Integer, Collection<PairData>> data : cachedOHLC.get(pair)) {
-					if (data.getKey() == interval) {
-						return new LinkedList<PairData>(data.getValue());
+			if (currentPairRecord != null) {
+				for (Pair<Integer, ObservableList<PairData>> p : currentPairRecord) {
+					if (p.getKey() == interval) {
+						p.getValue().setAll(data);
+						return;
 					}
 				}
+			} else {
+				currentPairRecord = new LinkedList<Pair<Integer, ObservableList<PairData>>>();
+				cachedOHLC.put(pair, currentPairRecord);
 			}
-			return Collections.emptyList();
+
+			Pair<Integer, ObservableList<PairData>> newData = new Pair<Integer, ObservableList<PairData>>(interval,
+					FXCollections.observableArrayList(data));
+			currentPairRecord.add(newData);
 		}
 	}
 
-	public final Double getCurrentData(String from, String to) {
+	private final ObservableList<PairData> getFromOHLCCache(String pair, int interval) {
+		synchronized (cachedOHLC) {
+			List<Pair<Integer, ObservableList<PairData>>> currentPairRecord = cachedOHLC.get(pair);
+
+			if (currentPairRecord != null) {
+				for (Pair<Integer, ObservableList<PairData>> data : currentPairRecord) {
+					if (data.getKey() == interval) {
+						return data.getValue();
+					}
+				}
+			} else {
+				currentPairRecord = new LinkedList<Pair<Integer, ObservableList<PairData>>>();
+				cachedOHLC.put(pair, currentPairRecord);
+			}
+
+			Pair<Integer, ObservableList<PairData>> newData = new Pair<Integer, ObservableList<PairData>>(interval,
+					FXCollections.observableArrayList());
+			currentPairRecord.add(newData);
+
+			return newData.getValue();
+		}
+	}
+
+	public final SimpleDoubleProperty getCurrentData(String from, String to) {
 
 		String pair = getPairName(from, to);
 		if (pair != null) {
 			return getCurrentData(pair);
 		}
-		return INVALID_VALUE;
+		return new SimpleDoubleProperty(INVALID_VALUE);
 	}
 
-	public final Double getCurrentData(String symbol) {
-		Double result = getFromCurrentCache(symbol);
-		if (result == INVALID_VALUE) {
-			updateCurrent(symbol);
-			// TODO Put a scheduleThread to updateCurrent(symbol)
+	public final SimpleDoubleProperty getCurrentData(String symbol) {
+		SimpleDoubleProperty result = getFromCurrentCache(symbol);
+		if (result.get() == INVALID_VALUE) {
+
+			// TODO Maybe schedule ? ?
+			Main.getInstance().threadExc.execute(() -> {
+				updateCurrent(symbol);
+			});
 		}
-		return getFromCurrentCache(symbol);
+		return result;
 	}
 
 	protected final void addToCurrentCache(String pair, Double data) {
 		synchronized (cachedCurrent) {
-			cachedCurrent.put(pair, data);
+			if (cachedCurrent.containsKey(pair)) {
+				cachedCurrent.get(pair).set(data);
+			} else {
+				cachedCurrent.put(pair, new SimpleDoubleProperty(data));
+			}
 		}
 	}
 
-	private final Double getFromCurrentCache(String pair) {
+	private final SimpleDoubleProperty getFromCurrentCache(String pair) {
 		synchronized (cachedCurrent) {
 			if (cachedCurrent.containsKey(pair)) {
-				return new Double(cachedCurrent.get(pair));
+				return cachedCurrent.get(pair);
+			} else {
+				SimpleDoubleProperty p = new SimpleDoubleProperty(INVALID_VALUE);
+				cachedCurrent.put(pair, p);
+				return p;
 			}
-			return INVALID_VALUE;
 		}
 	}
 

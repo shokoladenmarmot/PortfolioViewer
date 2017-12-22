@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 import core.Order;
 import core.XMLFactory;
 import core.TradeLibrary;
+import exchanges.Exchange;
 import exchanges.Exchange.Status;
 import exchanges.ExchangeProvider;
 import javafx.beans.binding.Bindings;
@@ -28,6 +29,9 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.ObservableSet;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -40,6 +44,7 @@ import javafx.scene.control.DateCell;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.control.TableCell;
@@ -94,38 +99,11 @@ public class ViewController implements Initializable {
 			// grid.setPadding(new Insets(20, 150, 10, 10));
 
 			// Collect all symbols from all markets
-			Set<String> allCurrencies = new HashSet<String>();
+			ObservableList<String> currencies = FXCollections.observableArrayList();
 
-			// Might need somekind of a listener if a provider fails to return its
-			// currencies.
 			for (ExchangeProvider ep : ExchangeProvider.values()) {
-				if (ep.getInstance().getStatus() != Status.READY) {
-					try {
-						Thread.sleep(1000);
-					} catch (InterruptedException e) {
-						LOGGER.info(
-								"Waiting on \"" + ep.getInstance().getName() + "\" to initialize. Thread.sleep(1sec)");
-						e.printStackTrace();
-					}
-				}
-				allCurrencies.addAll(ep.getInstance().getAvailableCurrency());
-			}
-
-			Button refreshB = new Button();
-			refreshB.setGraphic(
-					new ImageView(new Image(getClass().getResourceAsStream("/icons/refresh.png"), 16, 16, true, true)));
-			ComboBox<String> fromCmb = new ComboBox<String>();
-			ComboBox<String> toCmb = new ComboBox<String>();
-			ComboBox<String> market = new ComboBox<String>();
-			TextField fromAmount = new TextField();
-			TextField toAmount = new TextField();
-			DatePicker dp = new DatePicker(LocalDate.now());
-
-			refreshB.setOnAction(ev -> {
-				fromCmb.getItems().clear();
-				Set<String> currencies = new HashSet<String>();
-				for (ExchangeProvider ep : ExchangeProvider.values()) {
-					if (ep.getInstance().getStatus() != Status.READY) {
+				new Thread(() -> {
+					while (ep.getInstance().getStatus() != Status.READY) {
 						try {
 							Thread.sleep(1000);
 						} catch (InterruptedException e) {
@@ -135,9 +113,15 @@ public class ViewController implements Initializable {
 						}
 					}
 					currencies.addAll(ep.getInstance().getAvailableCurrency());
-				}
-				fromCmb.getItems().addAll(currencies);
-			});
+				}).start();
+			}
+
+			ComboBox<String> fromCmb = new ComboBox<String>();
+			ComboBox<String> toCmb = new ComboBox<String>();
+			ComboBox<String> market = new ComboBox<String>();
+			TextField fromAmount = new TextField();
+			TextField toAmount = new TextField();
+			DatePicker dp = new DatePicker(LocalDate.now());
 
 			fromCmb.valueProperty().addListener(new ChangeListener<String>() {
 
@@ -209,13 +193,13 @@ public class ViewController implements Initializable {
 			dp.setDayCellFactory(dayCellFactory);
 
 			// TODO : Editable + autocomplete
-			fromCmb.getItems().addAll(allCurrencies);
+			fromCmb.setItems(currencies);
 
 			// Build the layout
 			grid.add(new Label("From: "), 0, 0);
 			HBox fromLout = new HBox();
 			fromLout.getChildren().add(fromCmb);
-			fromLout.getChildren().add(refreshB);
+//			fromLout.getChildren().add(refreshB);
 			grid.add(fromLout, 1, 0);
 			grid.add(new Label("To: "), 0, 1);
 			grid.add(toCmb, 1, 1);
@@ -394,8 +378,8 @@ public class ViewController implements Initializable {
 							(data.getValue().getAmountSpend() / data.getValue().getAmountRecieved()));
 				}
 			}
-		});		
-				
+		});
+
 		price.setStyle("-fx-alignment: CENTER;");
 		price.setResizable(false);
 
@@ -409,33 +393,38 @@ public class ViewController implements Initializable {
 		date.setStyle("-fx-alignment: CENTER;");
 		date.setResizable(false);
 
-		TableColumn<Order, String> current = new TableColumn<>("Current Price");
-		current.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
-			public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
+		TableColumn<Order, Number> current = new TableColumn<>("Current Price");
+		current.setCellValueFactory(new Callback<CellDataFeatures<Order, Number>, ObservableValue<Number>>() {
+			public ObservableValue<Number> call(CellDataFeatures<Order, Number> data) {
 
-				Double val = Arrays.asList(ExchangeProvider.values()).stream()
+				return Arrays.asList(ExchangeProvider.values()).stream()
 						.filter(e -> e.getInstance().getName().equals(data.getValue().getMarket())).findFirst().get()
 						.getInstance().getCurrentData(data.getValue().getSymbol());
-				return Bindings.format("%.7f", val);
+
 			}
 		});
+		current.setCellFactory(tc -> new TableCell<Order, Number>() {
+			private final ProgressIndicator pi = new ProgressIndicator();
 
-		
-		// current.setCellFactory(tc -> new TableCell<Order, String>() {
-		//
-		// @Override
-		// protected void updateItem(final String item, boolean empty) {
-		// super.updateItem(item, empty);
-		// System.out.println("UPDATE " + this);
-		// if (item == null) {
-		// setText(null);
-		// setGraphic(null);
-		// return;
-		// }
-		// setText(item);
-		// }
-		// });
-		
+			@Override
+			protected void updateItem(final Number item, boolean empty) {
+				super.updateItem(item, empty);
+				if (item == null) {
+					setText(null);
+					setGraphic(null);
+					return;
+				}
+				if (item.doubleValue() == Exchange.INVALID_VALUE) {
+					setText(null);
+					pi.setPrefWidth(15);
+					pi.setPrefHeight(15);
+					setGraphic(pi);
+				} else {
+					setText(item.toString());
+					setGraphic(null);
+				}
+			}
+		});
 		current.setStyle("-fx-alignment: CENTER;");
 		current.setResizable(false);
 
