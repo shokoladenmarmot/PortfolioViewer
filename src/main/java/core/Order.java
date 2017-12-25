@@ -75,6 +75,10 @@ public class Order {
 		return symbol;
 	}
 
+	public Double getPrice(boolean fromPointOfView) {
+		return (fromPointOfView) ? (amountRecieved / amountSpend) : (amountSpend / amountRecieved);
+	}
+
 	public String getMarket() {
 		return market;
 	}

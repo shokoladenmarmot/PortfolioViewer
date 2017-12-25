@@ -199,7 +199,7 @@ public class ViewController implements Initializable {
 			grid.add(new Label("From: "), 0, 0);
 			HBox fromLout = new HBox();
 			fromLout.getChildren().add(fromCmb);
-//			fromLout.getChildren().add(refreshB);
+			// fromLout.getChildren().add(refreshB);
 			grid.add(fromLout, 1, 0);
 			grid.add(new Label("To: "), 0, 1);
 			grid.add(toCmb, 1, 1);
@@ -370,13 +370,8 @@ public class ViewController implements Initializable {
 		TableColumn<Order, String> price = new TableColumn<>("Price");
 		price.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
 			public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
-				if (data.getValue().getFrom().equals(tableOwner)) {
-					return Bindings.format("%.5f",
-							(data.getValue().getAmountRecieved() / data.getValue().getAmountSpend()));
-				} else {
-					return Bindings.format("%.5f",
-							(data.getValue().getAmountSpend() / data.getValue().getAmountRecieved()));
-				}
+				return Bindings.format("%.5f",
+						(data.getValue().getPrice(data.getValue().getFrom().equals(tableOwner))));
 			}
 		});
 
@@ -403,6 +398,7 @@ public class ViewController implements Initializable {
 
 			}
 		});
+
 		current.setCellFactory(tc -> new TableCell<Order, Number>() {
 			private final ProgressIndicator pi = new ProgressIndicator();
 
@@ -428,7 +424,63 @@ public class ViewController implements Initializable {
 		current.setStyle("-fx-alignment: CENTER;");
 		current.setResizable(false);
 
-		table.getColumns().addAll(orderType, amountCurrent, symbol, amountSymbol, price, exchange, date, current);
+		TableColumn<Order, Number> current_compared = new TableColumn<>("Initial-Current");
+		current_compared.setCellValueFactory(new Callback<CellDataFeatures<Order, Number>, ObservableValue<Number>>() {
+
+			private SimpleDoubleProperty val = new SimpleDoubleProperty(Exchange.INVALID_VALUE);
+			private boolean init = false;
+
+			public ObservableValue<Number> call(CellDataFeatures<Order, Number> data) {
+				if (!init) {
+					ObservableValue<Number> n = Arrays.asList(ExchangeProvider.values()).stream()
+							.filter(e -> e.getInstance().getName().equals(data.getValue().getMarket())).findFirst()
+							.get().getInstance().getCurrentData(data.getValue().getSymbol());
+
+					n.addListener(new ChangeListener<Number>() {
+
+						@Override
+						public void changed(ObservableValue<? extends Number> observable, Number oldValue,
+								Number newValue) {
+							val.set(newValue.doubleValue()
+									/ data.getValue().getPrice(data.getValue().getFrom().equals(tableOwner)));
+						}
+					});
+					init = true;
+				}
+				return val;
+			}
+		});
+
+		current_compared.setCellFactory(tc -> new TableCell<Order, Number>() {
+			private final ProgressIndicator pi = new ProgressIndicator();
+
+			@Override
+			protected void updateItem(final Number item, boolean empty) {
+				super.updateItem(item, empty);
+				if (item == null) {
+					setText(null);
+					setGraphic(null);
+					return;
+				}
+				if (item.doubleValue() == Exchange.INVALID_VALUE) {
+					setText(null);
+					pi.setPrefWidth(15);
+					pi.setPrefHeight(15);
+					setGraphic(pi);
+				} else {
+					String s = (item.doubleValue() < 1) ? "-" : "+";
+					s += ((1 - item.doubleValue()) * 100) + "%";
+
+					setText(s);
+					setGraphic(null);
+				}
+			}
+		});
+		current_compared.setStyle("-fx-alignment: CENTER;");
+		current_compared.setResizable(false);
+
+		table.getColumns().addAll(orderType, amountCurrent, symbol, amountSymbol, price, exchange, date, current,
+				current_compared);
 
 		ScrollPane sp = new ScrollPane();
 		sp.setFitToWidth(true);
