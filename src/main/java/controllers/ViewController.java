@@ -4,7 +4,6 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -16,13 +15,13 @@ import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import core.Utils;
 import core.Order;
 import core.XMLFactory;
 import core.TradeLibrary;
 import exchanges.Exchange;
 import exchanges.Exchange.Status;
 import exchanges.ExchangeProvider;
-import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -31,7 +30,6 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.collections.ObservableSet;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -46,7 +44,6 @@ import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
@@ -159,7 +156,7 @@ public class ViewController implements Initializable {
 			fromAmount.textProperty().addListener(new ChangeListener<String>() {
 				@Override
 				public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-					if (!newValue.matches("\\d*\\.?\\d*")) {
+					if (!newValue.matches(Utils.doubleExpression)) {
 						fromAmount.setText(oldValue);
 					}
 				}
@@ -168,7 +165,7 @@ public class ViewController implements Initializable {
 			toAmount.textProperty().addListener(new ChangeListener<String>() {
 				@Override
 				public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-					if (!newValue.matches("\\d*\\.?\\d*")) {
+					if (!newValue.matches(Utils.doubleExpression)) {
 						toAmount.setText(oldValue);
 					}
 				}
@@ -199,7 +196,6 @@ public class ViewController implements Initializable {
 			grid.add(new Label("From: "), 0, 0);
 			HBox fromLout = new HBox();
 			fromLout.getChildren().add(fromCmb);
-			// fromLout.getChildren().add(refreshB);
 			grid.add(fromLout, 1, 0);
 			grid.add(new Label("To: "), 0, 1);
 			grid.add(toCmb, 1, 1);
@@ -282,6 +278,7 @@ public class ViewController implements Initializable {
 
 		TradeLibrary.getInstance().clearLibrary();
 		operationalLayout.getChildren().clear();
+		recordsMap.clear();
 		ae.consume();
 	}
 
@@ -327,15 +324,12 @@ public class ViewController implements Initializable {
 		orderType.setStyle("-fx-alignment: CENTER;");
 		orderType.setResizable(false);
 
-		TableColumn<Order, Double> amountCurrent = new TableColumn<>("Amount");
-		amountCurrent.setCellValueFactory(new Callback<CellDataFeatures<Order, Double>, ObservableValue<Double>>() {
-			public ObservableValue<Double> call(CellDataFeatures<Order, Double> data) {
-
-				if (data.getValue().getFrom().equals(tableOwner)) {
-					return new SimpleDoubleProperty(data.getValue().getAmountSpend()).asObject();
-				} else {
-					return new SimpleDoubleProperty(data.getValue().getAmountRecieved()).asObject();
-				}
+		TableColumn<Order, String> amountCurrent = new TableColumn<>("Amount");
+		amountCurrent.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
+			public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
+				return new SimpleStringProperty(Utils.decimalEightSymbols
+						.format((data.getValue().getFrom().equals(tableOwner)) ? data.getValue().getAmountSpend()
+								: data.getValue().getAmountRecieved()));
 			}
 		});
 		amountCurrent.setStyle("-fx-alignment: CENTER;");
@@ -344,24 +338,19 @@ public class ViewController implements Initializable {
 		TableColumn<Order, String> symbol = new TableColumn<>("For");
 		symbol.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
 			public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
-				if (data.getValue().getFrom().equals(tableOwner)) {
-					return new SimpleStringProperty(data.getValue().getTo());
-				} else {
-					return new SimpleStringProperty(data.getValue().getFrom());
-				}
+				return new SimpleStringProperty(data.getValue().getFrom().equals(tableOwner) ? data.getValue().getTo()
+						: data.getValue().getFrom());
 			}
 		});
 		symbol.setStyle("-fx-alignment: CENTER;");
 		symbol.setResizable(false);
 
-		TableColumn<Order, Double> amountSymbol = new TableColumn<>("Amount");
-		amountSymbol.setCellValueFactory(new Callback<CellDataFeatures<Order, Double>, ObservableValue<Double>>() {
-			public ObservableValue<Double> call(CellDataFeatures<Order, Double> data) {
-				if (data.getValue().getFrom().equals(tableOwner)) {
-					return new SimpleDoubleProperty(data.getValue().getAmountRecieved()).asObject();
-				} else {
-					return new SimpleDoubleProperty(data.getValue().getAmountSpend()).asObject();
-				}
+		TableColumn<Order, String> amountSymbol = new TableColumn<>("Amount");
+		amountSymbol.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
+			public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
+				return new SimpleStringProperty(Utils.decimalEightSymbols
+						.format(data.getValue().getFrom().equals(tableOwner) ? data.getValue().getAmountRecieved()
+								: data.getValue().getAmountSpend()));
 			}
 		});
 		amountSymbol.setStyle("-fx-alignment: CENTER;");
@@ -370,8 +359,8 @@ public class ViewController implements Initializable {
 		TableColumn<Order, String> price = new TableColumn<>("Price");
 		price.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
 			public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
-				return Bindings.format("%.5f",
-						(data.getValue().getPrice(data.getValue().getFrom().equals(tableOwner))));
+				return new SimpleStringProperty(Utils.decimalEightSymbols
+						.format((data.getValue().getPrice(data.getValue().getFrom().equals(tableOwner)))));
 			}
 		});
 
@@ -388,29 +377,54 @@ public class ViewController implements Initializable {
 		date.setStyle("-fx-alignment: CENTER;");
 		date.setResizable(false);
 
-		TableColumn<Order, Number> current = new TableColumn<>("Current Price");
-		current.setCellValueFactory(new Callback<CellDataFeatures<Order, Number>, ObservableValue<Number>>() {
-			public ObservableValue<Number> call(CellDataFeatures<Order, Number> data) {
+		TableColumn<Order, String> current = new TableColumn<>("Current Price");
+		current.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
 
-				return Arrays.asList(ExchangeProvider.values()).stream()
+			private void evaluate(Order order, Number d, SimpleStringProperty val) {
+				Exchange e = ExchangeProvider.getMarket(order.getMarket());
+				if (e != null) {
+					if (e.isBase(order.getSymbol(), tableOwner)) {
+						val.set(Utils.decimalEightSymbols.format(d.doubleValue()));
+					} else {
+						val.set(Utils.decimalEightSymbols.format(((Double) (1 / d.doubleValue()))));
+					}
+				}
+			}
+
+			public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
+				SimpleStringProperty val = new SimpleStringProperty(Exchange.INVALID_VALUE.toString());
+
+				SimpleDoubleProperty d = Arrays.asList(ExchangeProvider.values()).stream()
 						.filter(e -> e.getInstance().getName().equals(data.getValue().getMarket())).findFirst().get()
 						.getInstance().getCurrentData(data.getValue().getSymbol());
 
+				if (d.getValue().doubleValue() != Exchange.INVALID_VALUE)
+					evaluate(data.getValue(), d.getValue(), val);
+
+				d.addListener(new ChangeListener<Number>() {
+
+					@Override
+					public void changed(ObservableValue<? extends Number> observable, Number oldValue,
+							Number newValue) {
+						evaluate(data.getValue(), newValue, val);
+					}
+				});
+				return val;
 			}
 		});
 
-		current.setCellFactory(tc -> new TableCell<Order, Number>() {
+		current.setCellFactory(tc -> new TableCell<Order, String>() {
 			private final ProgressIndicator pi = new ProgressIndicator();
 
 			@Override
-			protected void updateItem(final Number item, boolean empty) {
+			protected void updateItem(final String item, boolean empty) {
 				super.updateItem(item, empty);
 				if (item == null) {
 					setText(null);
 					setGraphic(null);
 					return;
 				}
-				if (item.doubleValue() == Exchange.INVALID_VALUE) {
+				if (item.equals(Exchange.INVALID_VALUE.toString())) {
 					setText(null);
 					pi.setPrefWidth(15);
 					pi.setPrefHeight(15);
@@ -424,54 +438,77 @@ public class ViewController implements Initializable {
 		current.setStyle("-fx-alignment: CENTER;");
 		current.setResizable(false);
 
-		TableColumn<Order, Number> current_compared = new TableColumn<>("Initial-Current");
-		current_compared.setCellValueFactory(new Callback<CellDataFeatures<Order, Number>, ObservableValue<Number>>() {
+		TableColumn<Order, String> current_compared = new TableColumn<>("Initial-Current");
+		current_compared.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
 
-			private SimpleDoubleProperty val = new SimpleDoubleProperty(Exchange.INVALID_VALUE);
-			private boolean init = false;
+			private final void evaluate(Order order, Number d, SimpleStringProperty val) {
+				Exchange e = ExchangeProvider.getMarket(order.getMarket());
 
-			public ObservableValue<Number> call(CellDataFeatures<Order, Number> data) {
-				if (!init) {
-					ObservableValue<Number> n = Arrays.asList(ExchangeProvider.values()).stream()
-							.filter(e -> e.getInstance().getName().equals(data.getValue().getMarket())).findFirst()
-							.get().getInstance().getCurrentData(data.getValue().getSymbol());
+				if (e != null) {
+					double res = 1;
+					if (e.isBase(order.getSymbol(), tableOwner)) {
+						res *= d.doubleValue();
+					} else {
+						res /= d.doubleValue();
+					}
 
-					n.addListener(new ChangeListener<Number>() {
-
-						@Override
-						public void changed(ObservableValue<? extends Number> observable, Number oldValue,
-								Number newValue) {
-							val.set(newValue.doubleValue()
-									/ data.getValue().getPrice(data.getValue().getFrom().equals(tableOwner)));
-						}
-					});
-					init = true;
+					if (order.getFrom().equals(tableOwner)) {
+						val.set(Utils.decimalEightSymbols.format(order.getPrice(true) / res));
+					} else {
+						val.set(Utils.decimalEightSymbols.format(res / order.getPrice(false)));
+					}
 				}
+			};
+
+			public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
+				SimpleStringProperty val = new SimpleStringProperty(Exchange.INVALID_VALUE.toString());
+
+				ObservableValue<Number> n = Arrays.asList(ExchangeProvider.values()).stream()
+						.filter(e -> e.getInstance().getName().equals(data.getValue().getMarket())).findFirst().get()
+						.getInstance().getCurrentData(data.getValue().getSymbol());
+
+				if (n.getValue().doubleValue() != Exchange.INVALID_VALUE)
+					evaluate(data.getValue(), n.getValue(), val);
+
+				n.addListener(new ChangeListener<Number>() {
+
+					@Override
+					public void changed(ObservableValue<? extends Number> observable, Number oldValue,
+							Number newValue) {
+						evaluate(data.getValue(), newValue, val);
+					}
+				});
+
 				return val;
 			}
 		});
 
-		current_compared.setCellFactory(tc -> new TableCell<Order, Number>() {
+		current_compared.setCellFactory(tc -> new TableCell<Order, String>() {
 			private final ProgressIndicator pi = new ProgressIndicator();
 
 			@Override
-			protected void updateItem(final Number item, boolean empty) {
+			protected void updateItem(final String item, boolean empty) {
 				super.updateItem(item, empty);
 				if (item == null) {
 					setText(null);
 					setGraphic(null);
 					return;
 				}
-				if (item.doubleValue() == Exchange.INVALID_VALUE) {
+				if (item.equals(Exchange.INVALID_VALUE.toString())) {
 					setText(null);
 					pi.setPrefWidth(15);
 					pi.setPrefHeight(15);
 					setGraphic(pi);
 				} else {
-					String s = (item.doubleValue() < 1) ? "-" : "+";
-					s += ((1 - item.doubleValue()) * 100) + "%";
+					double val = 1 - Double.parseDouble(item);
+					if (val > 0) {
+						setStyle("-fx-text-fill: red;");
+					} else {
+						setStyle("-fx-text-fill: green;");
+					}
+					val *= -1;
 
-					setText(s);
+					setText(Utils.decimalTwoSymbols.format(val * 100) + "%");
 					setGraphic(null);
 				}
 			}

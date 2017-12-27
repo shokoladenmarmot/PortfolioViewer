@@ -42,4 +42,9 @@ public class Coinbase extends Exchange {
 	protected void updateCurrent(String symbol) {
 		LOGGER.info("Update symbol:" + symbol);
 	}
+
+	@Override
+	public boolean isBase(String symbol, String from) {
+		return false;
+	}
 }

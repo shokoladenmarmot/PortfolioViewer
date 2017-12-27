@@ -29,4 +29,13 @@ public enum ExchangeProvider {
 	public Exchange getInstance() {
 		return inst;
 	}
+
+	public static Exchange getMarket(String s) {
+		for (ExchangeProvider ex : values()) {
+			if (ex.getInstance().exchangeName.equals(s)) {
+				return ex.getInstance();
+			}
+		}
+		return null;
+	}
 }

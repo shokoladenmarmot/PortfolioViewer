@@ -5,6 +5,7 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.logging.Logger;
@@ -19,8 +20,8 @@ import core.JSONFactory;
 public class Kraken extends Exchange {
 
 	private static final Logger LOGGER = Logger.getLogger(Kraken.class.getName());
-	// Kraken requests:
-	// System.out.println(JSONFactory.getJSONObject("https://api.kraken.com/0/public/Ticker?pair=BCHEUR").toString(2));
+
+	private HashMap<String, String> symbolAltname = null;
 
 	@Override
 	protected void init() {
@@ -45,7 +46,7 @@ public class Kraken extends Exchange {
 
 				Set<String> symbols = ((JSONObject) result.get("result")).keySet();
 
-				HashMap<String, String> symbolAltname = new HashMap<String, String>();
+				symbolAltname = new HashMap<String, String>();
 				for (String symb : symbols) {
 
 					String altName = ((JSONObject) result.get("result")).getJSONObject(symb).getString("altname");
@@ -137,5 +138,15 @@ public class Kraken extends Exchange {
 		// Last price for last trade
 		addToCurrentCache(symbol, Double
 				.parseDouble(((JSONObject) result.get("result")).getJSONObject(symbol).getJSONArray("c").getString(0)));
+	}
+
+	@Override
+	public boolean isBase(String symbol, String from) {
+		for (Entry<String, String> entry : symbolAltname.entrySet()) {
+			if (entry.getValue().equals(from)) {
+				return symbol.startsWith(entry.getKey());
+			}
+		}
+		return false;
 	}
 }

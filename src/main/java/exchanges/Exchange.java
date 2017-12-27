@@ -253,4 +253,6 @@ public abstract class Exchange {
 	abstract protected void updateCurrent(String symbol);
 
 	abstract protected void updateLastTime();
+
+	abstract public boolean isBase(String symbol, String from);
 }
