@@ -3,6 +3,7 @@ package controllers;
 import java.net.URL;
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,6 +31,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -96,7 +98,14 @@ public class ViewController implements Initializable {
 			// grid.setPadding(new Insets(20, 150, 10, 10));
 
 			// Collect all symbols from all markets
-			ObservableList<String> currencies = FXCollections.observableArrayList();
+			ObservableList<String> unsorderList = FXCollections.observableArrayList();
+			SortedList<String> currencies = new SortedList<String>(unsorderList);
+			currencies.setComparator(new Comparator<String>() {
+				@Override
+				public int compare(String o1, String o2) {
+					return o1.compareTo(o2);
+				}
+			});
 
 			for (ExchangeProvider ep : ExchangeProvider.values()) {
 				new Thread(() -> {
@@ -109,7 +118,9 @@ public class ViewController implements Initializable {
 							e.printStackTrace();
 						}
 					}
-					currencies.addAll(ep.getInstance().getAvailableCurrency());
+					synchronized (this) {
+						unsorderList.addAll(ep.getInstance().getAvailableCurrency());
+					}
 				}).start();
 			}
 

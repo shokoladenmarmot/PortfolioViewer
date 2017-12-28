@@ -2,18 +2,19 @@ package exchanges;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Logger;
 
 import Start.Main;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.collections.ObservableMap;
 import javafx.scene.image.Image;
 import javafx.util.Pair;
 
@@ -28,15 +29,15 @@ public abstract class Exchange {
 
 	public class PairData {
 
-		private final String date;
+		private final Date date;
 		private final Double value;
 
-		public PairData(String d, Double v) {
+		public PairData(Date d, Double v) {
 			date = d;
 			value = v;
 		}
 
-		public String getDate() {
+		public Date getDate() {
 			return date;
 		}
 
@@ -47,9 +48,6 @@ public abstract class Exchange {
 
 	// Current status of the service
 	private Status STATUS;
-
-	// Last update time on the server
-	protected AtomicLong lastUpdate;
 
 	protected String exchangeName;
 	protected Image logo;
@@ -72,7 +70,6 @@ public abstract class Exchange {
 	protected void init() {
 		STATUS = Status.INIT;
 
-		lastUpdate = new AtomicLong();
 		coinMap = new HashMap<String, List<Pair<String, String>>>();
 		cachedOHLC = new HashMap<String, List<Pair<Integer, ObservableList<PairData>>>>();
 		cachedCurrent = new HashMap<String, SimpleDoubleProperty>();
@@ -94,6 +91,20 @@ public abstract class Exchange {
 
 		if (getStatus() != Status.INIT) {
 			return coinMap.keySet();
+		}
+		return Collections.emptyList();
+	}
+
+	public final Collection<String> getAvailablePairs() {
+
+		if (getStatus() != Status.INIT) {
+			Set<String> result = new TreeSet<String>();
+			for (List<Pair<String, String>> l : coinMap.values()) {
+				for (Pair<String, String> pair : l) {
+					result.add(pair.getValue());
+				}
+			}
+			return result;
 		}
 		return Collections.emptyList();
 	}
@@ -124,6 +135,20 @@ public abstract class Exchange {
 			}
 		}
 		return null;
+	}
+
+	public final ObservableList<PairData> getOHLCData(String pair, int interval) {
+
+		if (getAvailablePairs().contains(pair)) {
+			ObservableList<PairData> result = getFromOHLCCache(pair, interval);
+			if (result.isEmpty()) {
+				Main.getInstance().threadExc.execute(() -> {
+					updateOLHC(pair, interval);
+				});
+			}
+			return result;
+		}
+		return FXCollections.observableArrayList();
 	}
 
 	public final ObservableList<PairData> getOHLCData(String from, String to, int interval) {
@@ -229,10 +254,6 @@ public abstract class Exchange {
 		}
 	}
 
-	public final long getLastUpdate() {
-		return lastUpdate.get();
-	}
-
 	public final Status getStatus() {
 
 		synchronized (this) {
@@ -251,8 +272,6 @@ public abstract class Exchange {
 	abstract protected void updateOLHC(String pair, int interval);
 
 	abstract protected void updateCurrent(String symbol);
-
-	abstract protected void updateLastTime();
 
 	abstract public boolean isBase(String symbol, String from);
 }

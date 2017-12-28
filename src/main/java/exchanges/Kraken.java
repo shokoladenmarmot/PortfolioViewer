@@ -1,13 +1,11 @@
 package exchanges;
 
-import java.text.SimpleDateFormat;
-import java.util.GregorianCalendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.logging.Logger;
 
 import javafx.util.Pair;
@@ -44,12 +42,12 @@ public class Kraken extends Exchange {
 				if (result == null)
 					return;
 
-				Set<String> symbols = ((JSONObject) result.get("result")).keySet();
+				Set<String> symbols = result.getJSONObject("result").keySet();
 
 				symbolAltname = new HashMap<String, String>();
 				for (String symb : symbols) {
 
-					String altName = ((JSONObject) result.get("result")).getJSONObject(symb).getString("altname");
+					String altName = result.getJSONObject("result").getJSONObject(symb).getString("altname");
 					symbolAltname.put(symb, altName);
 					List<Pair<String, String>> list = new LinkedList<Pair<String, String>>();
 					coinMap.put(altName, list);
@@ -60,7 +58,7 @@ public class Kraken extends Exchange {
 				if (result == null)
 					return;
 
-				Set<String> pairSet = ((JSONObject) result.get("result")).keySet();
+				Set<String> pairSet = result.getJSONObject("result").keySet();
 
 				for (String pair : pairSet) {
 
@@ -72,9 +70,9 @@ public class Kraken extends Exchange {
 					// result.get("result")).getJSONObject(pair).getString("altname");
 
 					String quote = symbolAltname
-							.get(((JSONObject) result.get("result")).getJSONObject(pair).getString("quote"));
+							.get(result.getJSONObject("result").getJSONObject(pair).getString("quote"));
 					String base = symbolAltname
-							.get(((JSONObject) result.get("result")).getJSONObject(pair).getString("base"));
+							.get(result.getJSONObject("result").getJSONObject(pair).getString("base"));
 
 					List<Pair<String, String>> quoteList = coinMap.get(quote);
 					List<Pair<String, String>> baseList = coinMap.get(base);
@@ -101,32 +99,19 @@ public class Kraken extends Exchange {
 		// KRAKEN: array of array entries(<time>, <open>, <high>, <low>, <close>,
 		// <vwap>, <volume>, <count>)
 
-		JSONArray asArray = ((JSONObject) result.get("result")).getJSONArray(pair);
+		JSONArray asArray = result.getJSONObject("result").getJSONArray(pair);
 		if (asArray.length() > 0) {
-			final GregorianCalendar gc = (GregorianCalendar) GregorianCalendar.getInstance(TimeZone.getTimeZone("GMT"));
-			SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy");
 
 			List<PairData> dataList = new LinkedList<PairData>();
 
 			for (int i = 0; i < asArray.length(); ++i) {
 				JSONArray content = asArray.getJSONArray(i);
 				// Time is in second so we need to convert to millisec
-				gc.setTimeInMillis(content.getLong(0) * 1000);
-				dataList.add(new PairData(dateFormat.format(gc.getTime()), Double.parseDouble(content.getString(4))));
+				dataList.add(
+						new PairData(new Date(content.getLong(0) * 1000), Double.parseDouble(content.getString(4))));
 			}
 			addToOHLCCache(pair, interval, dataList);
 		}
-	}
-
-	@Override
-	protected void updateLastTime() {
-		LOGGER.info("Update list of time");
-
-		JSONObject result = JSONFactory.getJSONObject(url + "Time");
-		if (result == null)
-			return;
-
-		lastUpdate.set(Long.parseLong(((JSONObject) result.get("result")).get("unixtime").toString()));
 	}
 
 	@Override
@@ -137,7 +122,7 @@ public class Kraken extends Exchange {
 
 		// Last price for last trade
 		addToCurrentCache(symbol, Double
-				.parseDouble(((JSONObject) result.get("result")).getJSONObject(symbol).getJSONArray("c").getString(0)));
+				.parseDouble(result.getJSONObject("result").getJSONObject(symbol).getJSONArray("c").getString(0)));
 	}
 
 	@Override

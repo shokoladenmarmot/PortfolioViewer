@@ -34,11 +34,6 @@ public class Coinbase extends Exchange {
 	}
 
 	@Override
-	protected void updateLastTime() {
-		LOGGER.info("Update list of time");
-	}
-
-	@Override
 	protected void updateCurrent(String symbol) {
 		LOGGER.info("Update symbol:" + symbol);
 	}

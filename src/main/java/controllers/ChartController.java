@@ -1,13 +1,19 @@
 package controllers;
 
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
+import Start.Main;
 import exchanges.Exchange;
+import exchanges.Exchange.PairData;
 import exchanges.ExchangeProvider;
+import fxml.UIPage;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.chart.CategoryAxis;
@@ -31,11 +37,6 @@ public class ChartController implements Initializable {
 		ONE, THREE, SIX, CUSTOM
 	}
 
-	private Duration duration;
-	private Exchange exchange;
-
-	// Cache?
-
 	@FXML
 	private LineChart<String, Double> btcchart;
 
@@ -47,6 +48,9 @@ public class ChartController implements Initializable {
 
 	@FXML
 	private ComboBox<String> exchangeCmb;
+
+	@FXML
+	private ComboBox<String> symbolCmb;
 
 	@FXML
 	private Button refresh;
@@ -69,12 +73,24 @@ public class ChartController implements Initializable {
 	@FXML
 	private DatePicker endDate;
 
+	private Duration duration;
+	private Exchange exchange;
+	private Series<String, Double> series1;
+
+	private boolean init = false;
+	private final SimpleDateFormat chartFormatter = new SimpleDateFormat("dd/MM/yy");
+
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		init();
+		if (init == false) {
+			init = true;
+			init();
+		}
 	}
 
 	private void init() {
+		series1 = new XYChart.Series<String, Double>();
+		btcchart.getData().add(series1);
 
 		btcchart.setCreateSymbols(false);
 		btcchart.setLegendVisible(false);
@@ -106,11 +122,9 @@ public class ChartController implements Initializable {
 		optionChanged();
 	}
 
-	public void refreshChart(ActionEvent ae) {
-		// Main.getInstance().changeScene(UIPage.Page.START);
+	public void backToMain(ActionEvent ae) {
+		Main.getInstance().changeScene(UIPage.Page.START);
 		ae.consume();
-
-		optionChanged();
 	}
 
 	public void optionChanged() {
@@ -133,10 +147,18 @@ public class ChartController implements Initializable {
 			endDate.setDisable(true);
 		}
 
+		Exchange currentVal = exchange;
+
 		if (exchangeCmb.getValue().equalsIgnoreCase("Kraken")) {
 			exchange = ExchangeProvider.KRAKEN.getInstance();
 		} else if (exchangeCmb.getValue().equalsIgnoreCase("Coinbase")) {
 			exchange = ExchangeProvider.COINBASE.getInstance();
+		} else if (exchangeCmb.getValue().equalsIgnoreCase("Bittrex")) {
+			exchange = ExchangeProvider.BITTREX.getInstance();
+		}
+
+		if (currentVal != exchange) {
+			symbolCmb.getItems().setAll(exchange.getAvailablePairs());
 		}
 
 		// TODO Save configs inside a ChartObject
@@ -145,14 +167,16 @@ public class ChartController implements Initializable {
 
 	private void updateChart() {
 
-		btcchart.getData().clear();
-		Series<String, Double> series1 = new XYChart.Series<String, Double>();
+		String pairName = symbolCmb.getValue();
 
-		exchange.getOHLCData("XBT", "USD", 1440).forEach(pd -> {
-			series1.getData().add(new Data<String, Double>(pd.getDate(), pd.getValue()));
+		if ((pairName == null) || pairName.trim().isEmpty())
+			return;
 
+		series1.getData().clear();
+		// ObservableList<PairData> l = ;
+
+		exchange.getOHLCData(pairName, 1440).forEach(pd -> {
+			series1.getData().add(new Data<String, Double>(chartFormatter.format(pd.getDate()), pd.getValue()));
 		});
-
-		btcchart.getData().add(series1);
 	}
 }
