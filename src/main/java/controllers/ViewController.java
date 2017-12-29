@@ -3,8 +3,11 @@ package controllers;
 import java.net.URL;
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +34,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.ObservableSet;
 import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -98,14 +102,8 @@ public class ViewController implements Initializable {
 			// grid.setPadding(new Insets(20, 150, 10, 10));
 
 			// Collect all symbols from all markets
-			ObservableList<String> unsorderList = FXCollections.observableArrayList();
-			SortedList<String> currencies = new SortedList<String>(unsorderList);
-			currencies.setComparator(new Comparator<String>() {
-				@Override
-				public int compare(String o1, String o2) {
-					return o1.compareTo(o2);
-				}
-			});
+			ObservableList<String> unsortedList = FXCollections.observableArrayList();
+			Set<String> tempSet = new HashSet<String>();
 
 			for (ExchangeProvider ep : ExchangeProvider.values()) {
 				new Thread(() -> {
@@ -119,7 +117,14 @@ public class ViewController implements Initializable {
 						}
 					}
 					synchronized (this) {
-						unsorderList.addAll(ep.getInstance().getAvailableCurrency());
+						tempSet.addAll(ep.getInstance().getAvailableCurrency());
+						unsortedList.setAll(tempSet);
+						unsortedList.sort(new Comparator<String>() {
+							@Override
+							public int compare(String o1, String o2) {
+								return o1.compareTo(o2);
+							}
+						});
 					}
 				}).start();
 			}
@@ -201,7 +206,7 @@ public class ViewController implements Initializable {
 			dp.setDayCellFactory(dayCellFactory);
 
 			// TODO : Editable + autocomplete
-			fromCmb.setItems(currencies);
+			fromCmb.setItems(unsortedList);
 
 			// Build the layout
 			grid.add(new Label("From: "), 0, 0);

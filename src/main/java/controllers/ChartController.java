@@ -155,6 +155,8 @@ public class ChartController implements Initializable {
 			exchange = ExchangeProvider.COINBASE.getInstance();
 		} else if (exchangeCmb.getValue().equalsIgnoreCase("Bittrex")) {
 			exchange = ExchangeProvider.BITTREX.getInstance();
+		} else if (exchangeCmb.getValue().equalsIgnoreCase("Binance")) {
+			exchange = ExchangeProvider.BINANCE.getInstance();
 		}
 
 		if (currentVal != exchange) {

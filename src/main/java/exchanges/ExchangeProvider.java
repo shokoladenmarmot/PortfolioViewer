@@ -4,7 +4,7 @@ import Start.Main;
 
 public enum ExchangeProvider {
 
-	KRAKEN(Kraken.class), COINBASE(Coinbase.class), BITTREX(Bittrex.class);
+	KRAKEN(Kraken.class), COINBASE(Coinbase.class), BITTREX(Bittrex.class), BINANCE(Binance.class);
 
 	// private static final Logger LOGGER =
 	// Logger.getLogger(ExchangeProvider.class.getName());
