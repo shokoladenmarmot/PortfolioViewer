@@ -2,9 +2,6 @@ package controllers;
 
 import java.net.URL;
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,8 +31,6 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.collections.ObservableSet;
-import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -144,7 +139,7 @@ public class ViewController implements Initializable {
 					Set<String> toCurrencies = new TreeSet<String>();
 
 					for (ExchangeProvider ep : ExchangeProvider.values()) {
-						toCurrencies.addAll(ep.getInstance().getCurrencyFromCurrency(newValue).stream()
+						toCurrencies.addAll(ep.getInstance().getPairsForCurrency(newValue).stream()
 								.map(p -> p.getKey()).collect(Collectors.toList()));
 					}
 					toCmb.getItems().addAll(toCurrencies);
@@ -398,33 +393,33 @@ public class ViewController implements Initializable {
 
 			private void evaluate(Order order, Number d, SimpleStringProperty val) {
 				Exchange e = ExchangeProvider.getMarket(order.getMarket());
-				if (e != null) {
-					if (e.isBase(order.getSymbol(), tableOwner)) {
-						val.set(Utils.decimalEightSymbols.format(d.doubleValue()));
-					} else {
-						val.set(Utils.decimalEightSymbols.format(((Double) (1 / d.doubleValue()))));
-					}
+
+				if (e.isBase(order.getSymbol(), tableOwner)) {
+					val.set(Utils.decimalEightSymbols.format(d.doubleValue()));
+				} else {
+					val.set(Utils.decimalEightSymbols.format(((Double) (1 / d.doubleValue()))));
 				}
 			}
 
 			public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
 				SimpleStringProperty val = new SimpleStringProperty(Exchange.INVALID_VALUE.toString());
 
-				SimpleDoubleProperty d = Arrays.asList(ExchangeProvider.values()).stream()
-						.filter(e -> e.getInstance().getName().equals(data.getValue().getMarket())).findFirst().get()
-						.getInstance().getCurrentData(data.getValue().getSymbol());
+				Exchange e = ExchangeProvider.getMarket(data.getValue().getMarket());
+				if (e != null) {
+					SimpleDoubleProperty d = e.getCurrentData(data.getValue().getSymbol());
 
-				if (d.getValue().doubleValue() != Exchange.INVALID_VALUE)
-					evaluate(data.getValue(), d.getValue(), val);
+					if (d.getValue().doubleValue() != Exchange.INVALID_VALUE)
+						evaluate(data.getValue(), d.getValue(), val);
 
-				d.addListener(new ChangeListener<Number>() {
+					d.addListener(new ChangeListener<Number>() {
 
-					@Override
-					public void changed(ObservableValue<? extends Number> observable, Number oldValue,
-							Number newValue) {
-						evaluate(data.getValue(), newValue, val);
-					}
-				});
+						@Override
+						public void changed(ObservableValue<? extends Number> observable, Number oldValue,
+								Number newValue) {
+							evaluate(data.getValue(), newValue, val);
+						}
+					});
+				}
 				return val;
 			}
 		});
@@ -460,41 +455,40 @@ public class ViewController implements Initializable {
 			private final void evaluate(Order order, Number d, SimpleStringProperty val) {
 				Exchange e = ExchangeProvider.getMarket(order.getMarket());
 
-				if (e != null) {
-					double res = 1;
-					if (e.isBase(order.getSymbol(), tableOwner)) {
-						res *= d.doubleValue();
-					} else {
-						res /= d.doubleValue();
-					}
+				double res = 1;
+				if (e.isBase(order.getSymbol(), tableOwner)) {
+					res *= d.doubleValue();
+				} else {
+					res /= d.doubleValue();
+				}
 
-					if (order.getFrom().equals(tableOwner)) {
-						val.set(Utils.decimalEightSymbols.format(order.getPrice(true) / res));
-					} else {
-						val.set(Utils.decimalEightSymbols.format(res / order.getPrice(false)));
-					}
+				if (order.getFrom().equals(tableOwner)) {
+					val.set(Utils.decimalEightSymbols.format(order.getPrice(true) / res));
+				} else {
+					val.set(Utils.decimalEightSymbols.format(res / order.getPrice(false)));
 				}
 			};
 
 			public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
 				SimpleStringProperty val = new SimpleStringProperty(Exchange.INVALID_VALUE.toString());
+				Exchange e = ExchangeProvider.getMarket(data.getValue().getMarket());
 
-				ObservableValue<Number> n = Arrays.asList(ExchangeProvider.values()).stream()
-						.filter(e -> e.getInstance().getName().equals(data.getValue().getMarket())).findFirst().get()
-						.getInstance().getCurrentData(data.getValue().getSymbol());
+				if (e != null) {
 
-				if (n.getValue().doubleValue() != Exchange.INVALID_VALUE)
-					evaluate(data.getValue(), n.getValue(), val);
+					ObservableValue<Number> n = e.getCurrentData(data.getValue().getSymbol());
 
-				n.addListener(new ChangeListener<Number>() {
+					if (n.getValue().doubleValue() != Exchange.INVALID_VALUE)
+						evaluate(data.getValue(), n.getValue(), val);
 
-					@Override
-					public void changed(ObservableValue<? extends Number> observable, Number oldValue,
-							Number newValue) {
-						evaluate(data.getValue(), newValue, val);
-					}
-				});
+					n.addListener(new ChangeListener<Number>() {
 
+						@Override
+						public void changed(ObservableValue<? extends Number> observable, Number oldValue,
+								Number newValue) {
+							evaluate(data.getValue(), newValue, val);
+						}
+					});
+				}
 				return val;
 			}
 		});

@@ -5,6 +5,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+import exchanges.Exchange;
 import exchanges.ExchangeProvider;
 import fxml.UIPage;
 import javafx.application.Application;
@@ -38,15 +39,12 @@ public class Main extends Application {
 	 * Initialize all exchanges.
 	 */
 	private void initialize() {
-		// threadExc.scheduleWithFixedDelay(new Runnable() {
-		// @Override
-		// public void run() {
-		// ep.getInstance().initiate();
-		// }
-		// }, 0, 10, TimeUnit.SECONDS);
+
 		for (ExchangeProvider ep : ExchangeProvider.values()) {
 			threadExc.execute(() -> {
-				ep.getInstance().initiate();
+				do {
+					ep.getInstance().initiate();
+				} while (ep.getInstance().getStatus() == Exchange.Status.INIT);
 			});
 		}
 	}

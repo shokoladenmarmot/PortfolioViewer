@@ -35,6 +35,8 @@ public class Kraken extends Exchange {
 
 		synchronized (Kraken.class) {
 			if (getStatus() == Status.INIT) {
+				init();
+				
 				LOGGER.info("Start: Populate list of pairs");
 
 				// Get all currencies

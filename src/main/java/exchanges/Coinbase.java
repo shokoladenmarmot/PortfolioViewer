@@ -26,6 +26,7 @@ public class Coinbase extends Exchange {
 	public void initiate() {
 		synchronized (Coinbase.class) {
 			if (getStatus() == Status.INIT) {
+				init();
 				LOGGER.info("Start: Populate list of pairs");
 				setStatus(Status.READY);
 				LOGGER.info("Finish: Populate list of pairs");

@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import Start.Main;
@@ -57,22 +59,35 @@ public abstract class Exchange {
 	// Coin name -> {[Coin name, Pair]}
 	protected Map<String, List<Pair<String, String>>> coinMap;
 
+	// Set containing all available pairs
+	protected Set<String> availablePairs;
+
 	// Map storing OHLC data
 	private HashMap<String, List<Pair<Integer, ObservableList<PairData>>>> cachedOHLC;
 
 	// Map storing current price
 	private HashMap<String, SimpleDoubleProperty> cachedCurrent;
 
+	// Map to store scheduled calls for current data updates
+	private HashMap<String, ScheduledFuture<?>> futureCurrentData;
+
+	// Map to store scheduled calls for updates
+	private HashMap<Pair<Integer, String>, ScheduledFuture<?>> futureOHLC;
+
 	public Exchange() {
-		init();
+		STATUS = Status.INIT;
 	}
 
 	protected void init() {
-		STATUS = Status.INIT;
+		LOGGER.info("Initiate exchange");
 
 		coinMap = new HashMap<String, List<Pair<String, String>>>();
+		// NOTE: Change to HashSet for performance
+		availablePairs = new TreeSet<String>();
 		cachedOHLC = new HashMap<String, List<Pair<Integer, ObservableList<PairData>>>>();
 		cachedCurrent = new HashMap<String, SimpleDoubleProperty>();
+		futureCurrentData = new HashMap<String, ScheduledFuture<?>>();
+		futureOHLC = new HashMap<Pair<Integer, String>, ScheduledFuture<?>>();
 	}
 
 	public final String getName() {
@@ -98,28 +113,22 @@ public abstract class Exchange {
 	public final Collection<String> getAvailablePairs() {
 
 		if (getStatus() != Status.INIT) {
-			Set<String> result = new TreeSet<String>();
-			for (List<Pair<String, String>> l : coinMap.values()) {
-				for (Pair<String, String> pair : l) {
-					result.add(pair.getValue());
+			if (availablePairs.isEmpty()) {
+				for (List<Pair<String, String>> l : coinMap.values()) {
+					for (Pair<String, String> pair : l) {
+						availablePairs.add(pair.getValue());
+					}
 				}
 			}
-			return result;
-		}
-		return Collections.emptyList();
-	}
-
-	public final List<Pair<String, String>> getCurrencyFromCurrency(String currency) {
-		if (getStatus() != Status.INIT) {
-			List<Pair<String, String>> result = coinMap.get(currency);
-			return (result != null) ? result : Collections.emptyList();
+			return availablePairs;
 		}
 		return Collections.emptyList();
 	}
 
 	public final List<Pair<String, String>> getPairsForCurrency(String currency) {
 		if (getStatus() != Status.INIT) {
-			return coinMap.get(currency);
+			List<Pair<String, String>> result = coinMap.get(currency);
+			return (result != null) ? result : Collections.emptyList();
 		}
 		return Collections.emptyList();
 	}
@@ -142,9 +151,18 @@ public abstract class Exchange {
 		if (getAvailablePairs().contains(pair)) {
 			ObservableList<PairData> result = getFromOHLCCache(pair, interval);
 			if (result.isEmpty()) {
-				Main.getInstance().threadExc.execute(() -> {
-					updateOLHC(pair, interval);
-				});
+
+				synchronized (futureOHLC) {
+					Pair<Integer, String> p = new Pair<Integer, String>(interval, pair);
+
+					if (futureOHLC.containsKey(p) == false) {
+						ScheduledFuture<?> future = Main.getInstance().threadExc.scheduleWithFixedDelay(() -> {
+							updateOLHC(pair, interval);
+						}, 0, 10, TimeUnit.SECONDS);
+
+						futureOHLC.put(p, future);
+					}
+				}
 			}
 			return result;
 		}
@@ -152,18 +170,8 @@ public abstract class Exchange {
 	}
 
 	public final ObservableList<PairData> getOHLCData(String from, String to, int interval) {
-
 		String pair = getPairName(from, to);
-		if (pair != null) {
-			ObservableList<PairData> result = getFromOHLCCache(pair, interval);
-			if (result.isEmpty()) {
-				Main.getInstance().threadExc.execute(() -> {
-					updateOLHC(pair, interval);
-				});
-			}
-			return result;
-		}
-		return FXCollections.observableArrayList();
+		return getOHLCData(pair, interval);
 	}
 
 	protected final void addToOHLCCache(String pair, int interval, Collection<PairData> data) {
@@ -211,25 +219,24 @@ public abstract class Exchange {
 		}
 	}
 
-	public final SimpleDoubleProperty getCurrentData(String from, String to) {
+	public final SimpleDoubleProperty getCurrentData(String symbol) {
+		if (getAvailablePairs().contains(symbol)) {
+			SimpleDoubleProperty result = getFromCurrentCache(symbol);
+			if (result.get() == INVALID_VALUE) {
 
-		String pair = getPairName(from, to);
-		if (pair != null) {
-			return getCurrentData(pair);
+				synchronized (futureCurrentData) {
+					if (futureCurrentData.containsKey(symbol) == false) {
+						ScheduledFuture<?> future = Main.getInstance().threadExc.scheduleWithFixedDelay(() -> {
+							updateCurrent(symbol);
+						}, 0, 10, TimeUnit.SECONDS);
+
+						futureCurrentData.put(symbol, future);
+					}
+				}
+			}
+			return result;
 		}
 		return new SimpleDoubleProperty(INVALID_VALUE);
-	}
-
-	public final SimpleDoubleProperty getCurrentData(String symbol) {
-		SimpleDoubleProperty result = getFromCurrentCache(symbol);
-		if (result.get() == INVALID_VALUE) {
-
-			// TODO Maybe schedule ? ?
-			Main.getInstance().threadExc.execute(() -> {
-				updateCurrent(symbol);
-			});
-		}
-		return result;
 	}
 
 	protected final void addToCurrentCache(String pair, Double data) {

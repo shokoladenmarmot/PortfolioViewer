@@ -40,6 +40,8 @@ public class Bittrex extends Exchange {
 
 		synchronized (Bittrex.class) {
 			if (getStatus() == Status.INIT) {
+				init();
+				
 				LOGGER.info("Start: Populate list of pairs");
 
 				// Get all currencies

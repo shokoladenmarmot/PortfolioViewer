@@ -30,6 +30,8 @@ public class Binance extends Exchange {
 		// exchange/public/product -
 		synchronized (Binance.class) {
 			if (getStatus() == Status.INIT) {
+				init();
+
 				LOGGER.info("Start: Populate list of pairs");
 
 				// Get all currencies
