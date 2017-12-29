@@ -41,7 +41,7 @@ public class Bittrex extends Exchange {
 		synchronized (Bittrex.class) {
 			if (getStatus() == Status.INIT) {
 				init();
-				
+
 				LOGGER.info("Start: Populate list of pairs");
 
 				// Get all currencies
@@ -134,7 +134,7 @@ public class Bittrex extends Exchange {
 			for (int i = 0; i < asArray.length(); ++i) {
 				JSONObject content = asArray.getJSONObject(i);
 
-				String time = content.getString("T")+".00Z";
+				String time = content.getString("T") + ".00Z";
 				Double val = content.getDouble("C");
 				Date date = Date.from(Instant.parse(time));
 
@@ -151,6 +151,10 @@ public class Bittrex extends Exchange {
 		// NOTE: V2 is unstable. Often returns data for a different symbol
 
 		JSONObject result = JSONFactory.getJSONObject(urlV1 + "getmarketsummary?market=" + symbol);
+
+		if (result == null)
+			return;
+
 		// Last price for last trade
 		double last = result.getJSONArray("result").getJSONObject(0).getDouble("Last");
 

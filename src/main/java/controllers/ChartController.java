@@ -148,16 +148,7 @@ public class ChartController implements Initializable {
 		}
 
 		Exchange currentVal = exchange;
-
-		if (exchangeCmb.getValue().equalsIgnoreCase("Kraken")) {
-			exchange = ExchangeProvider.KRAKEN.getInstance();
-		} else if (exchangeCmb.getValue().equalsIgnoreCase("Coinbase")) {
-			exchange = ExchangeProvider.COINBASE.getInstance();
-		} else if (exchangeCmb.getValue().equalsIgnoreCase("Bittrex")) {
-			exchange = ExchangeProvider.BITTREX.getInstance();
-		} else if (exchangeCmb.getValue().equalsIgnoreCase("Binance")) {
-			exchange = ExchangeProvider.BINANCE.getInstance();
-		}
+		exchange = ExchangeProvider.getMarket(exchangeCmb.getValue());
 
 		if (currentVal != exchange) {
 			symbolCmb.getItems().setAll(exchange.getAvailablePairs());

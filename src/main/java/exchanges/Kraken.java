@@ -36,7 +36,7 @@ public class Kraken extends Exchange {
 		synchronized (Kraken.class) {
 			if (getStatus() == Status.INIT) {
 				init();
-				
+
 				LOGGER.info("Start: Populate list of pairs");
 
 				// Get all currencies
@@ -108,7 +108,7 @@ public class Kraken extends Exchange {
 
 			for (int i = 0; i < asArray.length(); ++i) {
 				JSONArray content = asArray.getJSONArray(i);
-				// Time is in second so we need to convert to millisec
+				// Time is in seconds so we need to convert to millisec
 				dataList.add(
 						new PairData(new Date(content.getLong(0) * 1000), Double.parseDouble(content.getString(4))));
 			}
@@ -121,6 +121,9 @@ public class Kraken extends Exchange {
 		LOGGER.info("Update symbol:" + symbol);
 
 		JSONObject result = JSONFactory.getJSONObject(url + "Ticker?pair=" + symbol);
+
+		if (result == null)
+			return;
 
 		// Last price for last trade
 		addToCurrentCache(symbol, Double

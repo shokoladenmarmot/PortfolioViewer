@@ -13,7 +13,7 @@ import javafx.util.Pair;
 
 public class Binance extends Exchange {
 
-	private static final Logger LOGGER = Logger.getLogger(Bittrex.class.getName());
+	private static final Logger LOGGER = Logger.getLogger(Binance.class.getName());
 	private static final String websiteURL = new String("https://www.binance.com/");
 
 	@Override
@@ -152,6 +152,9 @@ public class Binance extends Exchange {
 		// API "v3" instead "v1"
 
 		JSONObject result = JSONFactory.getJSONObject(url + "ticker/price?symbol=" + symbol);
+		if (result == null)
+			return;
+
 		double last = Double.parseDouble(result.getString("price"));
 
 		addToCurrentCache(symbol, last);

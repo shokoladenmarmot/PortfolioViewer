@@ -155,6 +155,7 @@ public abstract class Exchange {
 				synchronized (futureOHLC) {
 					Pair<Integer, String> p = new Pair<Integer, String>(interval, pair);
 
+					// TODO Use different executor! Given that the default interval is 1 day what`s the point of updating very 10 sec?
 					if (futureOHLC.containsKey(p) == false) {
 						ScheduledFuture<?> future = Main.getInstance().threadExc.scheduleWithFixedDelay(() -> {
 							updateOLHC(pair, interval);

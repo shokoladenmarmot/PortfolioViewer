@@ -32,6 +32,7 @@
 				<String fx:value="Coinbase" />
 				<String fx:value="Bittrex" />
 				<String fx:value="Binance" />
+				<String fx:value="Poloniex" />
 			</FXCollections>
 		</items>
 		<value>
