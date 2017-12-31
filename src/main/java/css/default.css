@@ -29,3 +29,11 @@
 .button:hover{
     -fx-background-color: linear-gradient(#FFFFFF, #D1D1D1);
 }
+
+.scroll-pane{
+   -fx-background-color:transparent;
+}
+
+.scroll-pane .viewport {
+   -fx-background-color: transparent;
+}

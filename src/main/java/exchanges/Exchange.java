@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +73,7 @@ public abstract class Exchange {
 	private HashMap<String, ScheduledFuture<?>> futureCurrentData;
 
 	// Map to store scheduled calls for updates
-	private HashMap<Pair<Integer, String>, ScheduledFuture<?>> futureOHLC;
+	private Set<Pair<Integer, String>> futureOHLC;
 
 	public Exchange() {
 		STATUS = Status.INIT;
@@ -87,7 +88,7 @@ public abstract class Exchange {
 		cachedOHLC = new HashMap<String, List<Pair<Integer, ObservableList<PairData>>>>();
 		cachedCurrent = new HashMap<String, SimpleDoubleProperty>();
 		futureCurrentData = new HashMap<String, ScheduledFuture<?>>();
-		futureOHLC = new HashMap<Pair<Integer, String>, ScheduledFuture<?>>();
+		futureOHLC = new HashSet<Pair<Integer, String>>();
 	}
 
 	public final String getName() {
@@ -155,13 +156,12 @@ public abstract class Exchange {
 				synchronized (futureOHLC) {
 					Pair<Integer, String> p = new Pair<Integer, String>(interval, pair);
 
-					// TODO Use different executor! Given that the default interval is 1 day what`s the point of updating very 10 sec?
-					if (futureOHLC.containsKey(p) == false) {
-						ScheduledFuture<?> future = Main.getInstance().threadExc.scheduleWithFixedDelay(() -> {
+					if (futureOHLC.contains(p) == false) {
+						Main.getInstance().threadExc.execute(() -> {
 							updateOLHC(pair, interval);
-						}, 0, 10, TimeUnit.SECONDS);
+						});
 
-						futureOHLC.put(p, future);
+						futureOHLC.add(p);
 					}
 				}
 			}

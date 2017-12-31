@@ -101,7 +101,7 @@ public class XMLFactory {
 
 		File file = Main.getInstance().saveToFile();
 		if (file != null) {
-			List<Order> list = (List<Order>) TradeLibrary.getInstance().getOrders();
+			List<Order> list = TradeLibrary.getInstance().getOrders();
 			StringBuilder sb = new StringBuilder();
 			sb.append("<viewer>\n");
 			sb.append("<version>");

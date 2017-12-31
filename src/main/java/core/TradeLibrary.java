@@ -1,17 +1,18 @@
 package core;
 
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.logging.Logger;
+
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 
 public class TradeLibrary {
 
 	private static final Logger LOGGER = Logger.getLogger(TradeLibrary.class.getName());
 
 	private static TradeLibrary inst;
-	
-	// Note: It is probably better to use a concurrent queue
-	private Collection<Order> orders;
+
+	private ObservableList<Order> orders;
 
 	public static TradeLibrary getInstance() {
 		if (inst == null) {
@@ -23,12 +24,12 @@ public class TradeLibrary {
 	}
 
 	private TradeLibrary() {
-		orders = new LinkedList<Order>();
+		orders = FXCollections.observableArrayList();
 	}
 
-	public Collection<Order> getOrders() {
+	public ObservableList<Order> getOrders() {
 		synchronized (TradeLibrary.class) {
-			return new LinkedList<Order>(orders);
+			return orders;
 		}
 	}
 

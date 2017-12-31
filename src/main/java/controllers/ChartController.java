@@ -89,6 +89,8 @@ public class ChartController implements Initializable {
 	}
 
 	private void init() {
+		yAxis.setAnimated(false);
+		xAxis.setAnimated(false);
 		series1 = new XYChart.Series<String, Double>();
 		btcchart.getData().add(series1);
 
