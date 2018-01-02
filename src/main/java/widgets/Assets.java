@@ -4,7 +4,8 @@ import java.util.HashMap;
 
 import core.Order;
 import core.TradeLibrary;
-import javafx.beans.property.SimpleStringProperty;
+import core.Utils;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -19,40 +20,41 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
-public class AssetsChart extends VBox {
+public class Assets extends VBox {
 
 	public final class Currency {
 		private final String currencyName;
 
-		private SimpleStringProperty amount;
-		private SimpleStringProperty asUSD;
-		private SimpleStringProperty asBTC;
-		private SimpleStringProperty asETH;
+		private SimpleDoubleProperty amount;
+		private SimpleDoubleProperty asUSD;
+		private SimpleDoubleProperty asBTC;
+		private SimpleDoubleProperty asETH;
 
 		Currency(String name) {
 			currencyName = name;
 
-			amount = new SimpleStringProperty();
-			asUSD = new SimpleStringProperty();
-			asBTC = new SimpleStringProperty();
-			asETH = new SimpleStringProperty();
+			amount = new SimpleDoubleProperty(Utils.INVALID_VALUE);
+			asUSD = new SimpleDoubleProperty(Utils.INVALID_VALUE);
+			asBTC = new SimpleDoubleProperty(Utils.INVALID_VALUE);
+			asETH = new SimpleDoubleProperty(Utils.INVALID_VALUE);
 		}
 
-		public String getAmount() {
+		public double getAmount() {
 			return amount.get();
 		}
 
-		public String getAsUSD() {
+		public double getAsUSD() {
 			return asUSD.get();
 		}
 
-		public String getAsBTC() {
+		public double getAsBTC() {
 			return asBTC.get();
 		}
 
-		public String getAsETH() {
+		public double getAsETH() {
 			return asETH.get();
 		}
 
@@ -60,19 +62,19 @@ public class AssetsChart extends VBox {
 			return currencyName;
 		}
 
-		public void setAmount(String amount) {
+		public void setAmount(double amount) {
 			this.amount.setValue(amount);
 		}
 
-		public void setAsUSD(String asUSD) {
+		public void setAsUSD(double asUSD) {
 			this.asUSD.setValue(asUSD);
 		}
 
-		public void setAsBTC(String asBTC) {
+		public void setAsBTC(double asBTC) {
 			this.asBTC.setValue(asBTC);
 		}
 
-		public void setAsETH(String asETH) {
+		public void setAsETH(double asETH) {
 			this.asETH.setValue(asETH);
 		}
 	}
@@ -80,11 +82,14 @@ public class AssetsChart extends VBox {
 	private PieChart pie;
 	private StackedAreaChart<String, Number> area;
 	private StackedBarChart<String, Number> bar;
+	
+	private TableView<Currency> currencyTable;
 
 	private ObservableList<Currency> assets;
 
-	public AssetsChart() {
+	public Assets() {
 		assets = FXCollections.observableArrayList();
+		setAlignment(Pos.CENTER);
 
 		init();
 	}
@@ -112,38 +117,39 @@ public class AssetsChart extends VBox {
 		tp.setPadding(new Insets(10, 0, 0, 0));
 		tp.getChildren().addAll(pie, bar, area);
 
-		TableView<Currency> currencyTable = new TableView<Currency>(assets);
+		currencyTable = new TableView<Currency>(assets);
+		currencyTable.setMinHeight(100);
 		currencyTable.setEditable(false);
 		currencyTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
 		TableColumn<Currency, String> currency = new TableColumn<>("Currency");
 		currency.setCellValueFactory(new PropertyValueFactory<Currency, String>("currencyName"));
 		currency.setStyle("-fx-alignment: CENTER;");
-		currency.setResizable(false);
 
-		TableColumn<Currency, String> amountCurrent = new TableColumn<>("Amount");
-		amountCurrent.setCellValueFactory(new PropertyValueFactory<Currency, String>("amount"));
+		TableColumn<Currency, Number> amountCurrent = new TableColumn<>("Amount");
+		amountCurrent.setCellValueFactory(new PropertyValueFactory<Currency, Number>("amount"));
+		UIUtils.setNumberCellFactory(amountCurrent);
 		amountCurrent.setStyle("-fx-alignment: CENTER;");
-		amountCurrent.setResizable(false);
 
-		TableColumn<Currency, String> asUSD = new TableColumn<>("USD");
-		asUSD.setCellValueFactory(new PropertyValueFactory<Currency, String>("asUSD"));
+		TableColumn<Currency, Number> asUSD = new TableColumn<>("USD");
+		asUSD.setCellValueFactory(new PropertyValueFactory<Currency, Number>("asUSD"));
+		UIUtils.setNumberCellFactory(asUSD);
 		asUSD.setStyle("-fx-alignment: CENTER;");
-		asUSD.setResizable(false);
 
-		TableColumn<Currency, String> asBTC = new TableColumn<>("BTC");
-		asBTC.setCellValueFactory(new PropertyValueFactory<Currency, String>("asBTC"));
+		TableColumn<Currency, Number> asBTC = new TableColumn<>("BTC");
+		asBTC.setCellValueFactory(new PropertyValueFactory<Currency, Number>("asBTC"));
+		UIUtils.setNumberCellFactory(asBTC);
 		asBTC.setStyle("-fx-alignment: CENTER;");
-		asBTC.setResizable(false);
 
-		TableColumn<Currency, String> asETH = new TableColumn<>("ETH");
-		asETH.setCellValueFactory(new PropertyValueFactory<Currency, String>("asETH"));
+		TableColumn<Currency, Number> asETH = new TableColumn<>("ETH");
+		asETH.setCellValueFactory(new PropertyValueFactory<Currency, Number>("asETH"));
+		UIUtils.setNumberCellFactory(asETH);
 		asETH.setStyle("-fx-alignment: CENTER;");
-		asETH.setResizable(false);
 
 		currencyTable.getColumns().addAll(currency, amountCurrent, asUSD, asBTC, asETH);
 
 		getChildren().addAll(tp, currencyTable);
+		VBox.setVgrow(currencyTable, Priority.ALWAYS);
 	}
 
 	private void update() {
@@ -154,7 +160,7 @@ public class AssetsChart extends VBox {
 				Double v = values.get(o.getFrom());
 				values.put(o.getFrom(), v - o.getAmountSpend());
 			} else {
-				values.put(o.getFrom(), -o.getAmountSpend());
+				values.put(o.getFrom(), 0 - o.getAmountSpend());
 			}
 			if (values.containsKey(o.getTo())) {
 				Double v = values.get(o.getTo());
@@ -168,14 +174,14 @@ public class AssetsChart extends VBox {
 			boolean exists = false;
 			for (Currency asCurrency : assets) {
 				if (asCurrency.getCurrencyName().equals(currency)) {
-					asCurrency.setAmount(values.get(currency).toString());
+					asCurrency.setAmount(values.get(currency));
 					exists = true;
 					break;
 				}
 			}
 			if (!exists) {
 				Currency newCurrency = new Currency(currency);
-				newCurrency.setAmount(values.get(currency).toString());
+				newCurrency.setAmount(values.get(currency));
 				assets.add(newCurrency);
 			}
 		}

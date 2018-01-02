@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import Start.Main;
+import core.Utils;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -28,7 +29,6 @@ public abstract class Exchange {
 	}
 
 	private static final Logger LOGGER = Logger.getLogger(Exchange.class.getName());
-	public static final Double INVALID_VALUE = new Double(-1);
 
 	public class PairData {
 
@@ -223,7 +223,7 @@ public abstract class Exchange {
 	public final SimpleDoubleProperty getCurrentData(String symbol) {
 		if (getAvailablePairs().contains(symbol)) {
 			SimpleDoubleProperty result = getFromCurrentCache(symbol);
-			if (result.get() == INVALID_VALUE) {
+			if (result.get() == Utils.INVALID_VALUE) {
 
 				synchronized (futureCurrentData) {
 					if (futureCurrentData.containsKey(symbol) == false) {
@@ -237,7 +237,7 @@ public abstract class Exchange {
 			}
 			return result;
 		}
-		return new SimpleDoubleProperty(INVALID_VALUE);
+		return new SimpleDoubleProperty(Utils.INVALID_VALUE);
 	}
 
 	protected final void addToCurrentCache(String pair, Double data) {
@@ -255,7 +255,7 @@ public abstract class Exchange {
 			if (cachedCurrent.containsKey(pair)) {
 				return cachedCurrent.get(pair);
 			} else {
-				SimpleDoubleProperty p = new SimpleDoubleProperty(INVALID_VALUE);
+				SimpleDoubleProperty p = new SimpleDoubleProperty(Utils.INVALID_VALUE);
 				cachedCurrent.put(pair, p);
 				return p;
 			}

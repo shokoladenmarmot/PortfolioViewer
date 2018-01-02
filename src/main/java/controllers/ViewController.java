@@ -43,9 +43,7 @@ import javafx.scene.control.DateCell;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
-import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
@@ -57,6 +55,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
+import widgets.UIUtils;
 
 public class ViewController implements Initializable {
 
@@ -139,8 +138,8 @@ public class ViewController implements Initializable {
 					Set<String> toCurrencies = new TreeSet<String>();
 
 					for (ExchangeProvider ep : ExchangeProvider.values()) {
-						toCurrencies.addAll(ep.getInstance().getPairsForCurrency(newValue).stream()
-								.map(p -> p.getKey()).collect(Collectors.toList()));
+						toCurrencies.addAll(ep.getInstance().getPairsForCurrency(newValue).stream().map(p -> p.getKey())
+								.collect(Collectors.toList()));
 					}
 					toCmb.getItems().addAll(toCurrencies);
 				}
@@ -333,7 +332,6 @@ public class ViewController implements Initializable {
 		});
 
 		orderType.setStyle("-fx-alignment: CENTER;");
-		orderType.setResizable(false);
 
 		TableColumn<Order, String> amountCurrent = new TableColumn<>("Amount");
 		amountCurrent.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
@@ -344,7 +342,6 @@ public class ViewController implements Initializable {
 			}
 		});
 		amountCurrent.setStyle("-fx-alignment: CENTER;");
-		amountCurrent.setResizable(false);
 
 		TableColumn<Order, String> symbol = new TableColumn<>("For");
 		symbol.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
@@ -354,7 +351,6 @@ public class ViewController implements Initializable {
 			}
 		});
 		symbol.setStyle("-fx-alignment: CENTER;");
-		symbol.setResizable(false);
 
 		TableColumn<Order, String> amountSymbol = new TableColumn<>("Amount");
 		amountSymbol.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
@@ -365,7 +361,6 @@ public class ViewController implements Initializable {
 			}
 		});
 		amountSymbol.setStyle("-fx-alignment: CENTER;");
-		amountSymbol.setResizable(false);
 
 		TableColumn<Order, String> price = new TableColumn<>("Price");
 		price.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
@@ -376,39 +371,36 @@ public class ViewController implements Initializable {
 		});
 
 		price.setStyle("-fx-alignment: CENTER;");
-		price.setResizable(false);
 
 		TableColumn<Order, String> exchange = new TableColumn<>("Market");
 		exchange.setCellValueFactory(new PropertyValueFactory<Order, String>("market"));
 		exchange.setStyle("-fx-alignment: CENTER;");
-		exchange.setResizable(false);
 
 		TableColumn<Order, String> date = new TableColumn<>("Date");
 		date.setCellValueFactory(cellData -> new ReadOnlyStringWrapper(cellData.getValue().getDateToString()));
 		date.setStyle("-fx-alignment: CENTER;");
-		date.setResizable(false);
 
-		TableColumn<Order, String> current = new TableColumn<>("Current Price");
-		current.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
+		TableColumn<Order, Number> current = new TableColumn<>("Current Price");
+		current.setCellValueFactory(new Callback<CellDataFeatures<Order, Number>, ObservableValue<Number>>() {
 
-			private void evaluate(Order order, Number d, SimpleStringProperty val) {
+			private void evaluate(Order order, Number d, SimpleDoubleProperty val) {
 				Exchange e = ExchangeProvider.getMarket(order.getMarket());
 
 				if (e.isBase(order.getSymbol(), tableOwner)) {
-					val.set(Utils.decimalEightSymbols.format(d.doubleValue()));
+					val.set(d.doubleValue());
 				} else {
-					val.set(Utils.decimalEightSymbols.format(((Double) (1 / d.doubleValue()))));
+					val.set(1.0 / d.doubleValue());
 				}
 			}
 
-			public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
-				SimpleStringProperty val = new SimpleStringProperty(Exchange.INVALID_VALUE.toString());
+			public ObservableValue<Number> call(CellDataFeatures<Order, Number> data) {
+				SimpleDoubleProperty val = new SimpleDoubleProperty(Utils.INVALID_VALUE);
 
 				Exchange e = ExchangeProvider.getMarket(data.getValue().getMarket());
 				if (e != null) {
 					SimpleDoubleProperty d = e.getCurrentData(data.getValue().getSymbol());
 
-					if (d.getValue().doubleValue() != Exchange.INVALID_VALUE)
+					if (d.getValue().doubleValue() != Utils.INVALID_VALUE)
 						evaluate(data.getValue(), d.getValue(), val);
 
 					d.addListener(new ChangeListener<Number>() {
@@ -423,36 +415,13 @@ public class ViewController implements Initializable {
 				return val;
 			}
 		});
-
-		current.setCellFactory(tc -> new TableCell<Order, String>() {
-			private final ProgressIndicator pi = new ProgressIndicator();
-
-			@Override
-			protected void updateItem(final String item, boolean empty) {
-				super.updateItem(item, empty);
-				if (item == null) {
-					setText(null);
-					setGraphic(null);
-					return;
-				}
-				if (item.equals(Exchange.INVALID_VALUE.toString())) {
-					setText(null);
-					pi.setPrefWidth(15);
-					pi.setPrefHeight(15);
-					setGraphic(pi);
-				} else {
-					setText(item.toString());
-					setGraphic(null);
-				}
-			}
-		});
+		UIUtils.setNumberCellFactory(current);
 		current.setStyle("-fx-alignment: CENTER;");
-		current.setResizable(false);
 
-		TableColumn<Order, String> current_compared = new TableColumn<>("Initial-Current");
-		current_compared.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
+		TableColumn<Order, Number> current_compared = new TableColumn<>("Initial-Current");
+		current_compared.setCellValueFactory(new Callback<CellDataFeatures<Order, Number>, ObservableValue<Number>>() {
 
-			private final void evaluate(Order order, Number d, SimpleStringProperty val) {
+			private final void evaluate(Order order, Number d, SimpleDoubleProperty val) {
 				Exchange e = ExchangeProvider.getMarket(order.getMarket());
 
 				double res = 1;
@@ -463,21 +432,21 @@ public class ViewController implements Initializable {
 				}
 
 				if (order.getFrom().equals(tableOwner)) {
-					val.set(Utils.decimalEightSymbols.format(order.getPrice(true) / res));
+					val.set(order.getPrice(true) / res);
 				} else {
-					val.set(Utils.decimalEightSymbols.format(res / order.getPrice(false)));
+					val.set(res / order.getPrice(false));
 				}
 			};
 
-			public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
-				SimpleStringProperty val = new SimpleStringProperty(Exchange.INVALID_VALUE.toString());
+			public ObservableValue<Number> call(CellDataFeatures<Order, Number> data) {
+				SimpleDoubleProperty val = new SimpleDoubleProperty(Utils.INVALID_VALUE);
 				Exchange e = ExchangeProvider.getMarket(data.getValue().getMarket());
 
 				if (e != null) {
 
 					ObservableValue<Number> n = e.getCurrentData(data.getValue().getSymbol());
 
-					if (n.getValue().doubleValue() != Exchange.INVALID_VALUE)
+					if (n.getValue().doubleValue() != Utils.INVALID_VALUE)
 						evaluate(data.getValue(), n.getValue(), val);
 
 					n.addListener(new ChangeListener<Number>() {
@@ -492,39 +461,8 @@ public class ViewController implements Initializable {
 				return val;
 			}
 		});
-
-		current_compared.setCellFactory(tc -> new TableCell<Order, String>() {
-			private final ProgressIndicator pi = new ProgressIndicator();
-
-			@Override
-			protected void updateItem(final String item, boolean empty) {
-				super.updateItem(item, empty);
-				if (item == null) {
-					setText(null);
-					setGraphic(null);
-					return;
-				}
-				if (item.equals(Exchange.INVALID_VALUE.toString())) {
-					setText(null);
-					pi.setPrefWidth(15);
-					pi.setPrefHeight(15);
-					setGraphic(pi);
-				} else {
-					double val = 1 - Double.parseDouble(item);
-					if (val > 0) {
-						setStyle("-fx-text-fill: red;");
-					} else {
-						setStyle("-fx-text-fill: green;");
-					}
-					val *= -1;
-
-					setText(Utils.decimalTwoSymbols.format(val * 100) + "%");
-					setGraphic(null);
-				}
-			}
-		});
+		UIUtils.setPercentCellFactory(current_compared);
 		current_compared.setStyle("-fx-alignment: CENTER;");
-		current_compared.setResizable(false);
 
 		table.getColumns().addAll(orderType, amountCurrent, symbol, amountSymbol, price, exchange, date, current,
 				current_compared);
