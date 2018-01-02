@@ -3,11 +3,9 @@ package controllers;
 import java.net.URL;
 import java.time.LocalDate;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ResourceBundle;
@@ -20,21 +18,17 @@ import core.Utils;
 import core.Order;
 import core.XMLFactory;
 import core.TradeLibrary;
-import exchanges.Exchange;
 import exchanges.Exchange.Status;
 import exchanges.ExchangeProvider;
-import javafx.beans.property.ReadOnlyStringWrapper;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
@@ -43,26 +37,14 @@ import javafx.scene.control.DateCell;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableColumn.CellDataFeatures;
-import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.util.Callback;
-import widgets.UIUtils;
 
 public class ViewController implements Initializable {
 
 	private static final Logger LOGGER = Logger.getLogger(ViewController.class.getName());
-
-	@FXML
-	private VBox operationalLayout;
 
 	@FXML
 	private Button addButton;
@@ -76,11 +58,8 @@ public class ViewController implements Initializable {
 	@FXML
 	private Button loadButton;
 
-	private Map<String, TableView> recordsMap;
-
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		recordsMap = new HashMap<String, TableView>();
 	}
 
 	public void addNewTrade(ActionEvent ae) {
@@ -97,30 +76,42 @@ public class ViewController implements Initializable {
 
 			// Collect all symbols from all markets
 			ObservableList<String> unsortedList = FXCollections.observableArrayList();
+			SortedList<String> sortedVersion = new SortedList<>(unsortedList, new Comparator<String>() {
+				@Override
+				public int compare(String o1, String o2) {
+					return o1.compareTo(o2);
+				}
+
+			});
 			Set<String> tempSet = new HashSet<String>();
 
 			for (ExchangeProvider ep : ExchangeProvider.values()) {
-				new Thread(() -> {
-					while (ep.getInstance().getStatus() != Status.READY) {
-						try {
-							Thread.sleep(1000);
-						} catch (InterruptedException e) {
-							LOGGER.info("Waiting on \"" + ep.getInstance().getName()
-									+ "\" to initialize. Thread.sleep(1sec)");
-							e.printStackTrace();
+				if (ep.getInstance().getStatus() != Status.READY) {
+					ep.getInstance().getStatuProperty().addListener(new ChangeListener<Status>() {
+						@Override
+						public void changed(ObservableValue<? extends Status> observable, Status oldValue,
+								Status newValue) {
+							Platform.runLater(() -> {
+								synchronized (unsortedList) {
+									tempSet.addAll(ep.getInstance().getAvailableCurrency());
+									unsortedList.setAll(tempSet);
+								}
+
+								ep.getInstance().getStatuProperty().removeListener(this);
+							});
 						}
-					}
-					synchronized (this) {
-						tempSet.addAll(ep.getInstance().getAvailableCurrency());
-						unsortedList.setAll(tempSet);
-						unsortedList.sort(new Comparator<String>() {
-							@Override
-							public int compare(String o1, String o2) {
-								return o1.compareTo(o2);
-							}
-						});
-					}
-				}).start();
+					});
+				} else {
+					tempSet.addAll(ep.getInstance().getAvailableCurrency());
+					unsortedList.setAll(tempSet);
+					unsortedList.sort(new Comparator<String>() {
+						@Override
+						public int compare(String o1, String o2) {
+							return o1.compareTo(o2);
+						}
+
+					});
+				}
 			}
 
 			ComboBox<String> fromCmb = new ComboBox<String>();
@@ -200,7 +191,7 @@ public class ViewController implements Initializable {
 			dp.setDayCellFactory(dayCellFactory);
 
 			// TODO : Editable + autocomplete
-			fromCmb.setItems(unsortedList);
+			fromCmb.setItems(sortedVersion);
 
 			// Build the layout
 			grid.add(new Label("From: "), 0, 0);
@@ -263,7 +254,6 @@ public class ViewController implements Initializable {
 		if (result.isPresent()) {
 			Order o = result.get();
 			TradeLibrary.getInstance().addOrder(o);
-			addNewOrder(o);
 		}
 		ae.consume();
 	}
@@ -277,209 +267,12 @@ public class ViewController implements Initializable {
 	public void loadTemplate(ActionEvent ae) {
 
 		XMLFactory.loadOrderListFromXML();
-
-		for (Order o : TradeLibrary.getInstance().getOrders()) {
-			addNewOrder(o);
-		}
 		ae.consume();
 	}
 
 	public void clearTemplate(ActionEvent ae) {
 
 		TradeLibrary.getInstance().clearLibrary();
-		operationalLayout.getChildren().clear();
-		recordsMap.clear();
 		ae.consume();
-	}
-
-	private void addNewOrder(Order newOrder) {
-
-		TableView[] tables = new TableView[2];
-		tables[0] = recordsMap.get(newOrder.getFrom());
-		tables[1] = recordsMap.get(newOrder.getTo());
-
-		if (tables[0] == null) {
-			tables[0] = createNewTableForOrder(newOrder.getFrom(), newOrder);
-		}
-
-		if (tables[1] == null) {
-			tables[1] = createNewTableForOrder(newOrder.getTo(), newOrder);
-		}
-
-		tables[0].getItems().add(newOrder);
-		tables[1].getItems().add(newOrder);
-	}
-
-	private TableView createNewTableForOrder(String tableOwner, Order o) {
-		GridPane grid = new GridPane();
-		TableView<Order> table = new TableView<>();
-
-		table.setEditable(false);
-		table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
-		// TODO put hints for headers
-		TableColumn<Order, ImageView> orderType = new TableColumn<>("Type");
-		orderType.setCellValueFactory(new Callback<CellDataFeatures<Order, ImageView>, ObservableValue<ImageView>>() {
-			public ObservableValue<ImageView> call(CellDataFeatures<Order, ImageView> data) {
-				if (data.getValue().getFrom().equals(tableOwner)) {
-					return new SimpleObjectProperty<ImageView>(new ImageView(
-							new Image(getClass().getResourceAsStream("/icons/down.png"), 16, 16, true, true)));
-				} else {
-					return new SimpleObjectProperty<ImageView>(new ImageView(
-							new Image(getClass().getResourceAsStream("/icons/up.png"), 16, 16, true, true)));
-				}
-			}
-		});
-
-		orderType.setStyle("-fx-alignment: CENTER;");
-
-		TableColumn<Order, String> amountCurrent = new TableColumn<>("Amount");
-		amountCurrent.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
-			public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
-				return new SimpleStringProperty(Utils.decimalEightSymbols
-						.format((data.getValue().getFrom().equals(tableOwner)) ? data.getValue().getAmountSpend()
-								: data.getValue().getAmountRecieved()));
-			}
-		});
-		amountCurrent.setStyle("-fx-alignment: CENTER;");
-
-		TableColumn<Order, String> symbol = new TableColumn<>("For");
-		symbol.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
-			public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
-				return new SimpleStringProperty(data.getValue().getFrom().equals(tableOwner) ? data.getValue().getTo()
-						: data.getValue().getFrom());
-			}
-		});
-		symbol.setStyle("-fx-alignment: CENTER;");
-
-		TableColumn<Order, String> amountSymbol = new TableColumn<>("Amount");
-		amountSymbol.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
-			public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
-				return new SimpleStringProperty(Utils.decimalEightSymbols
-						.format(data.getValue().getFrom().equals(tableOwner) ? data.getValue().getAmountRecieved()
-								: data.getValue().getAmountSpend()));
-			}
-		});
-		amountSymbol.setStyle("-fx-alignment: CENTER;");
-
-		TableColumn<Order, String> price = new TableColumn<>("Price");
-		price.setCellValueFactory(new Callback<CellDataFeatures<Order, String>, ObservableValue<String>>() {
-			public ObservableValue<String> call(CellDataFeatures<Order, String> data) {
-				return new SimpleStringProperty(Utils.decimalEightSymbols
-						.format((data.getValue().getPrice(data.getValue().getFrom().equals(tableOwner)))));
-			}
-		});
-
-		price.setStyle("-fx-alignment: CENTER;");
-
-		TableColumn<Order, String> exchange = new TableColumn<>("Market");
-		exchange.setCellValueFactory(new PropertyValueFactory<Order, String>("market"));
-		exchange.setStyle("-fx-alignment: CENTER;");
-
-		TableColumn<Order, String> date = new TableColumn<>("Date");
-		date.setCellValueFactory(cellData -> new ReadOnlyStringWrapper(cellData.getValue().getDateToString()));
-		date.setStyle("-fx-alignment: CENTER;");
-
-		TableColumn<Order, Number> current = new TableColumn<>("Current Price");
-		current.setCellValueFactory(new Callback<CellDataFeatures<Order, Number>, ObservableValue<Number>>() {
-
-			private void evaluate(Order order, Number d, SimpleDoubleProperty val) {
-				Exchange e = ExchangeProvider.getMarket(order.getMarket());
-
-				if (e.isBase(order.getSymbol(), tableOwner)) {
-					val.set(d.doubleValue());
-				} else {
-					val.set(1.0 / d.doubleValue());
-				}
-			}
-
-			public ObservableValue<Number> call(CellDataFeatures<Order, Number> data) {
-				SimpleDoubleProperty val = new SimpleDoubleProperty(Utils.INVALID_VALUE);
-
-				Exchange e = ExchangeProvider.getMarket(data.getValue().getMarket());
-				if (e != null) {
-					SimpleDoubleProperty d = e.getCurrentData(data.getValue().getSymbol());
-
-					if (d.getValue().doubleValue() != Utils.INVALID_VALUE)
-						evaluate(data.getValue(), d.getValue(), val);
-
-					d.addListener(new ChangeListener<Number>() {
-
-						@Override
-						public void changed(ObservableValue<? extends Number> observable, Number oldValue,
-								Number newValue) {
-							evaluate(data.getValue(), newValue, val);
-						}
-					});
-				}
-				return val;
-			}
-		});
-		UIUtils.setNumberCellFactory(current);
-		current.setStyle("-fx-alignment: CENTER;");
-
-		TableColumn<Order, Number> current_compared = new TableColumn<>("Initial-Current");
-		current_compared.setCellValueFactory(new Callback<CellDataFeatures<Order, Number>, ObservableValue<Number>>() {
-
-			private final void evaluate(Order order, Number d, SimpleDoubleProperty val) {
-				Exchange e = ExchangeProvider.getMarket(order.getMarket());
-
-				double res = 1;
-				if (e.isBase(order.getSymbol(), tableOwner)) {
-					res *= d.doubleValue();
-				} else {
-					res /= d.doubleValue();
-				}
-
-				if (order.getFrom().equals(tableOwner)) {
-					val.set(order.getPrice(true) / res);
-				} else {
-					val.set(res / order.getPrice(false));
-				}
-			};
-
-			public ObservableValue<Number> call(CellDataFeatures<Order, Number> data) {
-				SimpleDoubleProperty val = new SimpleDoubleProperty(Utils.INVALID_VALUE);
-				Exchange e = ExchangeProvider.getMarket(data.getValue().getMarket());
-
-				if (e != null) {
-
-					ObservableValue<Number> n = e.getCurrentData(data.getValue().getSymbol());
-
-					if (n.getValue().doubleValue() != Utils.INVALID_VALUE)
-						evaluate(data.getValue(), n.getValue(), val);
-
-					n.addListener(new ChangeListener<Number>() {
-
-						@Override
-						public void changed(ObservableValue<? extends Number> observable, Number oldValue,
-								Number newValue) {
-							evaluate(data.getValue(), newValue, val);
-						}
-					});
-				}
-				return val;
-			}
-		});
-		UIUtils.setPercentCellFactory(current_compared);
-		current_compared.setStyle("-fx-alignment: CENTER;");
-
-		table.getColumns().addAll(orderType, amountCurrent, symbol, amountSymbol, price, exchange, date, current,
-				current_compared);
-
-		ScrollPane sp = new ScrollPane();
-		sp.setFitToWidth(true);
-		sp.setContent(table);
-		// sp.setVbarPolicy(ScrollBarPolicy.ALWAYS);
-
-		grid.setHgap(10);
-		grid.setVgap(10);
-		grid.setPadding(new Insets(10, 10, 10, 10));
-		grid.add(new Label(tableOwner), 0, 0);
-		grid.add(sp, 0, 1);
-
-		operationalLayout.getChildren().add(grid);
-		recordsMap.put(tableOwner, table);
-		return table;
 	}
 }

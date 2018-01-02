@@ -1,6 +1,7 @@
 package widgets;
 
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 import core.Order;
 import core.TradeLibrary;
@@ -16,6 +17,7 @@ import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.PieChart;
 import javafx.scene.chart.StackedAreaChart;
 import javafx.scene.chart.StackedBarChart;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -82,7 +84,7 @@ public class Assets extends VBox {
 	private PieChart pie;
 	private StackedAreaChart<String, Number> area;
 	private StackedBarChart<String, Number> bar;
-	
+
 	private TableView<Currency> currencyTable;
 
 	private ObservableList<Currency> assets;
@@ -90,11 +92,13 @@ public class Assets extends VBox {
 	public Assets() {
 		assets = FXCollections.observableArrayList();
 		setAlignment(Pos.CENTER);
+		setPadding(new Insets(10, 0, 0, 0));
 
 		init();
 	}
 
 	private void init() {
+
 		NumberAxis na = new NumberAxis();
 		na.setLabel("Value");
 		NumberAxis na2 = new NumberAxis();
@@ -111,6 +115,9 @@ public class Assets extends VBox {
 				update();
 			}
 		});
+
+		Label title = new Label("Assets");
+		title.setAlignment(Pos.CENTER);
 
 		HBox tp = new HBox(40);
 		tp.setAlignment(Pos.CENTER);
@@ -148,11 +155,14 @@ public class Assets extends VBox {
 
 		currencyTable.getColumns().addAll(currency, amountCurrent, asUSD, asBTC, asETH);
 
-		getChildren().addAll(tp, currencyTable);
-		VBox.setVgrow(currencyTable, Priority.ALWAYS);
+		getChildren().addAll(title, tp, currencyTable);
 	}
 
 	private void update() {
+
+		// Clear the whole table and re-populate it.
+		assets.clear();
+
 		HashMap<String, Double> values = new HashMap<String, Double>();
 
 		for (Order o : TradeLibrary.getInstance().getOrders()) {
@@ -170,19 +180,24 @@ public class Assets extends VBox {
 			}
 		}
 
-		for (String currency : values.keySet()) {
-			boolean exists = false;
-			for (Currency asCurrency : assets) {
-				if (asCurrency.getCurrencyName().equals(currency)) {
-					asCurrency.setAmount(values.get(currency));
-					exists = true;
-					break;
+		for (Entry<String, Double> entr : values.entrySet()) {
+
+			// Don't add currencies which balance is currently 0
+			if (entr.getValue() != 0) {
+
+				boolean exists = false;
+				for (Currency asCurrency : assets) {
+					if (asCurrency.getCurrencyName().equals(entr.getKey())) {
+						asCurrency.setAmount(entr.getValue());
+						exists = true;
+						break;
+					}
 				}
-			}
-			if (!exists) {
-				Currency newCurrency = new Currency(currency);
-				newCurrency.setAmount(values.get(currency));
-				assets.add(newCurrency);
+				if (!exists) {
+					Currency newCurrency = new Currency(entr.getKey());
+					newCurrency.setAmount(entr.getValue());
+					assets.add(newCurrency);
+				}
 			}
 		}
 	}

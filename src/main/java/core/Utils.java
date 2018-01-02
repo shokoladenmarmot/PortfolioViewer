@@ -4,7 +4,7 @@ import java.text.DecimalFormat;
 
 public class Utils {
 
-	public static final Double INVALID_VALUE = new Double(-1);
+	public static final Double INVALID_VALUE = Double.NEGATIVE_INFINITY;
 
 	public static final DecimalFormat decimalEightSymbols = new DecimalFormat("0.00000000");
 	public static final DecimalFormat decimalFiveSymbols = new DecimalFormat("0.00000");

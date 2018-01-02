@@ -23,7 +23,7 @@ public class UIUtils {
 							setGraphic(null);
 							return;
 						}
-						if (item.doubleValue() == Utils.INVALID_VALUE) {
+						if (item.equals(Utils.INVALID_VALUE)) {
 							setText(null);
 							pi.setPrefWidth(15);
 							pi.setPrefHeight(15);
@@ -53,7 +53,7 @@ public class UIUtils {
 							setGraphic(null);
 							return;
 						}
-						if (item.doubleValue() == Utils.INVALID_VALUE) {
+						if (item.equals(Utils.INVALID_VALUE)) {
 							setText(null);
 							pi.setPrefWidth(15);
 							pi.setPrefHeight(15);
@@ -61,9 +61,9 @@ public class UIUtils {
 						} else {
 							double val = 1 - item.doubleValue();
 							if (val > 0) {
-								setStyle("-fx-text-fill: red;");
+								setStyle("-fx-alignment: CENTER;-fx-text-fill: red;");
 							} else {
-								setStyle("-fx-text-fill: green;");
+								setStyle("-fx-alignment: CENTER;-fx-text-fill: green;");
 							}
 							val *= -1;
 

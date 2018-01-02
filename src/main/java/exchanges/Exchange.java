@@ -16,7 +16,9 @@ import java.util.logging.Logger;
 
 import Start.Main;
 import core.Utils;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.image.Image;
@@ -50,7 +52,8 @@ public abstract class Exchange {
 	}
 
 	// Current status of the service
-	private Status STATUS;
+
+	private ObjectProperty<Status> STATUS;
 
 	protected String exchangeName;
 	protected Image logo;
@@ -76,7 +79,7 @@ public abstract class Exchange {
 	private Set<Pair<Integer, String>> futureOHLC;
 
 	public Exchange() {
-		STATUS = Status.INIT;
+		STATUS = new SimpleObjectProperty<Status>(Status.INIT);
 	}
 
 	protected void init() {
@@ -262,16 +265,20 @@ public abstract class Exchange {
 		}
 	}
 
+	public final ObjectProperty<Status> getStatuProperty() {
+		return STATUS;
+	}
+
 	public final Status getStatus() {
 
 		synchronized (this) {
-			return STATUS;
+			return STATUS.get();
 		}
 	}
 
 	public final void setStatus(Status s) {
 		synchronized (this) {
-			STATUS = s;
+			 STATUS.set(s);
 		}
 	}
 

@@ -50,6 +50,7 @@ public class Kraken extends Exchange {
 				for (String symb : symbols) {
 
 					String altName = result.getJSONObject("result").getJSONObject(symb).getString("altname");
+					altName = convertToHumanReadableSymbol(altName);
 					symbolAltname.put(symb, altName);
 					List<Pair<String, String>> list = new LinkedList<Pair<String, String>>();
 					coinMap.put(altName, list);
@@ -85,6 +86,20 @@ public class Kraken extends Exchange {
 				setStatus(Status.READY);
 				LOGGER.info("Finish: Populate list of pairs");
 			}
+		}
+	}
+
+	private String convertToHumanReadableSymbol(String symbol) {
+
+		switch (symbol) {
+		case "XBT":
+			return "BTC";
+		case "XDG":
+			return "DOGE";
+		case "XVN":
+			return "VEN";
+		default:
+			return symbol;
 		}
 	}
 
