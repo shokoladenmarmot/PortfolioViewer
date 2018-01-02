@@ -1,5 +1,7 @@
 package widgets;
 
+import java.util.HashMap;
+
 import core.Order;
 import core.TradeLibrary;
 import javafx.beans.property.SimpleStringProperty;
@@ -7,23 +9,22 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
-import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.PieChart;
 import javafx.scene.chart.StackedAreaChart;
 import javafx.scene.chart.StackedBarChart;
-import javafx.scene.control.Label;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 
 public class AssetsChart extends VBox {
 
-	private final class Currency extends HBox {
-		final String currencyName;
+	public final class Currency {
+		private final String currencyName;
 
 		private SimpleStringProperty amount;
 		private SimpleStringProperty asUSD;
@@ -31,44 +32,48 @@ public class AssetsChart extends VBox {
 		private SimpleStringProperty asETH;
 
 		Currency(String name) {
-			setAlignment(Pos.CENTER);
 			currencyName = name;
 
 			amount = new SimpleStringProperty();
 			asUSD = new SimpleStringProperty();
 			asBTC = new SimpleStringProperty();
 			asETH = new SimpleStringProperty();
-
-			Label amountL = new Label();
-			amountL.textProperty().bind(amount);
-			Label usdL = new Label();
-			usdL.textProperty().bind(asUSD);
-			Label btcL = new Label();
-			btcL.textProperty().bind(asBTC);
-			Label ethL = new Label();
-			ethL.textProperty().bind(asETH);
-
-			getChildren().addAll(new Label(currencyName), amountL, usdL, btcL, ethL);
 		}
 
-		public SimpleStringProperty getAmount() {
-			return amount;
+		public String getAmount() {
+			return amount.get();
 		}
 
-		public SimpleStringProperty getAsUSD() {
-			return asUSD;
+		public String getAsUSD() {
+			return asUSD.get();
 		}
 
-		public SimpleStringProperty getAsBTC() {
-			return asBTC;
+		public String getAsBTC() {
+			return asBTC.get();
 		}
 
-		public SimpleStringProperty getAsETH() {
-			return asETH;
+		public String getAsETH() {
+			return asETH.get();
 		}
 
 		public String getCurrencyName() {
 			return currencyName;
+		}
+
+		public void setAmount(String amount) {
+			this.amount.setValue(amount);
+		}
+
+		public void setAsUSD(String asUSD) {
+			this.asUSD.setValue(asUSD);
+		}
+
+		public void setAsBTC(String asBTC) {
+			this.asBTC.setValue(asBTC);
+		}
+
+		public void setAsETH(String asETH) {
+			this.asETH.setValue(asETH);
 		}
 	}
 
@@ -76,13 +81,10 @@ public class AssetsChart extends VBox {
 	private StackedAreaChart<String, Number> area;
 	private StackedBarChart<String, Number> bar;
 
-	private ObservableList<Node> assets;
+	private ObservableList<Currency> assets;
 
 	public AssetsChart() {
 		assets = FXCollections.observableArrayList();
-
-		this.setAlignment(Pos.CENTER);
-		// this.setPadding(new Insets(0, 0, 0, 0));
 
 		init();
 	}
@@ -105,29 +107,77 @@ public class AssetsChart extends VBox {
 			}
 		});
 
-		TilePane tp = new TilePane(Orientation.HORIZONTAL);
-		tp.setPadding(new Insets(20, 10, 20, 0));
-		tp.setHgap(10.0);
+		HBox tp = new HBox(40);
+		tp.setAlignment(Pos.CENTER);
+		tp.setPadding(new Insets(10, 0, 0, 0));
 		tp.getChildren().addAll(pie, bar, area);
 
-		HBox headers = new HBox();
-		headers.setPadding(new Insets(0, 0, 10, 0));
-		headers.setAlignment(Pos.CENTER);
-		headers.getChildren().addAll(new Label("Currency"), new Label("Amount"), new Label("USD"), new Label("BTC"),
-				new Label("ETH"));
+		TableView<Currency> currencyTable = new TableView<Currency>(assets);
+		currencyTable.setEditable(false);
+		currencyTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-		VBox table = new VBox();
-		table.setAlignment(Pos.CENTER);
+		TableColumn<Currency, String> currency = new TableColumn<>("Currency");
+		currency.setCellValueFactory(new PropertyValueFactory<Currency, String>("currencyName"));
+		currency.setStyle("-fx-alignment: CENTER;");
+		currency.setResizable(false);
 
-		assets = table.getChildren();
+		TableColumn<Currency, String> amountCurrent = new TableColumn<>("Amount");
+		amountCurrent.setCellValueFactory(new PropertyValueFactory<Currency, String>("amount"));
+		amountCurrent.setStyle("-fx-alignment: CENTER;");
+		amountCurrent.setResizable(false);
 
-		getChildren().addAll(tp, headers, table);
+		TableColumn<Currency, String> asUSD = new TableColumn<>("USD");
+		asUSD.setCellValueFactory(new PropertyValueFactory<Currency, String>("asUSD"));
+		asUSD.setStyle("-fx-alignment: CENTER;");
+		asUSD.setResizable(false);
+
+		TableColumn<Currency, String> asBTC = new TableColumn<>("BTC");
+		asBTC.setCellValueFactory(new PropertyValueFactory<Currency, String>("asBTC"));
+		asBTC.setStyle("-fx-alignment: CENTER;");
+		asBTC.setResizable(false);
+
+		TableColumn<Currency, String> asETH = new TableColumn<>("ETH");
+		asETH.setCellValueFactory(new PropertyValueFactory<Currency, String>("asETH"));
+		asETH.setStyle("-fx-alignment: CENTER;");
+		asETH.setResizable(false);
+
+		currencyTable.getColumns().addAll(currency, amountCurrent, asUSD, asBTC, asETH);
+
+		getChildren().addAll(tp, currencyTable);
 	}
 
 	private void update() {
-		for (Node n : assets) {
-			// TODO: compare class type and name of the currency
-			// Create an asset for every currency stored in the TradeLibrary and update their total value
+		HashMap<String, Double> values = new HashMap<String, Double>();
+
+		for (Order o : TradeLibrary.getInstance().getOrders()) {
+			if (values.containsKey(o.getFrom())) {
+				Double v = values.get(o.getFrom());
+				values.put(o.getFrom(), v - o.getAmountSpend());
+			} else {
+				values.put(o.getFrom(), -o.getAmountSpend());
+			}
+			if (values.containsKey(o.getTo())) {
+				Double v = values.get(o.getTo());
+				values.put(o.getTo(), v + o.getAmountRecieved());
+			} else {
+				values.put(o.getTo(), o.getAmountRecieved());
+			}
+		}
+
+		for (String currency : values.keySet()) {
+			boolean exists = false;
+			for (Currency asCurrency : assets) {
+				if (asCurrency.getCurrencyName().equals(currency)) {
+					asCurrency.setAmount(values.get(currency).toString());
+					exists = true;
+					break;
+				}
+			}
+			if (!exists) {
+				Currency newCurrency = new Currency(currency);
+				newCurrency.setAmount(values.get(currency).toString());
+				assets.add(newCurrency);
+			}
 		}
 	}
 
