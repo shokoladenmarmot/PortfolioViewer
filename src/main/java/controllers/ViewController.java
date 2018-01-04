@@ -115,8 +115,11 @@ public class ViewController implements Initializable {
 			}
 
 			ComboBox<String> fromCmb = new ComboBox<String>();
+			fromCmb.setEditable(true);
 			ComboBox<String> toCmb = new ComboBox<String>();
+			toCmb.setEditable(true);
 			ComboBox<String> market = new ComboBox<String>();
+			market.setEditable(true);
 			TextField fromAmount = new TextField();
 			TextField toAmount = new TextField();
 			DatePicker dp = new DatePicker(LocalDate.now());
@@ -236,15 +239,18 @@ public class ViewController implements Initializable {
 
 			dialog.setResultConverter(dialogButton -> {
 				if (dialogButton == logButtonType) {
+					String symbol = fromCmb.getValue() + "-" + toCmb.getValue();
 					for (ExchangeProvider ep : ExchangeProvider.values()) {
 						if (ep.getInstance().getName().equals(market.getValue())) {
-							String symbol = ep.getInstance().getPairName(fromCmb.getValue(), toCmb.getValue());
-							// NOTE: Divide the time by 1000 to get result in seconds
-							return new Order(symbol, market.getValue(), fromCmb.getValue(), toCmb.getValue(),
-									Double.parseDouble(fromAmount.getText()), Double.parseDouble(toAmount.getText()),
-									java.sql.Date.valueOf(dp.getValue()).getTime() / 1000);
+							symbol = ep.getInstance().getPairName(fromCmb.getValue(), toCmb.getValue());
+							break;
 						}
 					}
+					// NOTE: Divide the time by 1000 to get result in seconds
+					return new Order(symbol, market.getValue(), fromCmb.getValue(), toCmb.getValue(),
+							Double.parseDouble(fromAmount.getText()), Double.parseDouble(toAmount.getText()),
+							java.sql.Date.valueOf(dp.getValue()).getTime() / 1000);
+
 				}
 				return null;
 			});

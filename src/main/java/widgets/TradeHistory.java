@@ -38,6 +38,8 @@ public class TradeHistory extends VBox {
 	public TradeHistory() {
 		setAlignment(Pos.CENTER);
 		setPadding(new Insets(10, 0, 0, 0));
+		setMinHeight(300);
+		setMaxHeight(400);
 
 		init();
 	}
@@ -64,8 +66,6 @@ public class TradeHistory extends VBox {
 		ScrollPane sp = new ScrollPane();
 		sp.setContent(operationalVbox);
 		sp.setFitToWidth(true);
-		sp.setMinHeight(300);
-		sp.setMaxHeight(400);
 
 		getChildren().addAll(title, sp);
 

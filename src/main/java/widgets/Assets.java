@@ -3,6 +3,7 @@ package widgets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.Map.Entry;
 
 import core.Order;
@@ -24,6 +25,7 @@ import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.Side;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.PieChart;
@@ -188,7 +190,10 @@ public class Assets extends VBox {
 
 		bar = new StackedBarChart<String, Number>(new CategoryAxis(), na);
 		area = new StackedAreaChart<String, Number>(new CategoryAxis(), na2);
+
 		pie = new PieChart();
+		pie.setLabelLineLength(10);
+		pie.setLegendSide(Side.LEFT);
 
 		TradeLibrary.getInstance().getOrders().addListener(new ListChangeListener<Order>() {
 
@@ -308,17 +313,19 @@ public class Assets extends VBox {
 				values.put(o.getTo(), o.getAmountRecieved());
 			}
 
-			assets.stream()
+			listToRetain.addAll(assets.stream()
 					.filter(a -> (a.getCurrencyName().equals(o.getFrom()) || a.getCurrencyName().equals(o.getTo())))
-					.forEach(a -> listToRetain.add(a));
+					.collect(Collectors.toSet()));
+
 		}
 
 		assets.retainAll(listToRetain);
+		pie.getData().retainAll(pie.getData().filtered(p -> values.keySet().contains(p.getName())));
 
 		for (Entry<String, Double> entr : values.entrySet()) {
 
 			// Don't add currencies which balance is currently 0
-			if (entr.getValue() != 0) {
+			if (entr.getValue() >= 0) {
 
 				boolean exists = false;
 				for (Currency asCurrency : assets) {
@@ -438,20 +445,38 @@ public class Assets extends VBox {
 
 					newCurrency.setAmount(entr.getValue());
 					assets.add(newCurrency);
+
+					PieChart.Data newData = new PieChart.Data(newCurrency.getCurrencyName(), 0);
+					newCurrency.getAsUSDProperty().addListener(new ChangeListener<Number>() {
+
+						@Override
+						public void changed(ObservableValue<? extends Number> observable, Number oldValue,
+								Number newValue) {
+							newData.setPieValue(newValue.doubleValue());
+						}
+					});
+					
+					/*
+					try {
+						Field privateStringField =  PieChart.Data.class.
+						        getDeclaredField("textNode");
+						privateStringField.setAccessible(true);
+						
+						Text t = (Text) privateStringField.get(newData);
+						
+						System.out.println("fieldValue = " + t.getAccessibleText());
+						
+					} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					*/
+
+					
+					pie.getData().add(newData);
+
 				}
 			}
 		}
-	}
-
-	public StackedBarChart<String, Number> getBar() {
-		return bar;
-	}
-
-	public PieChart getPie() {
-		return pie;
-	}
-
-	public StackedAreaChart<String, Number> getArea() {
-		return area;
 	}
 }
