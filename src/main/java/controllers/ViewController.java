@@ -14,11 +14,13 @@ import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import Start.Main;
 import core.Utils;
 import core.Order;
 import core.XMLFactory;
 import core.TradeLibrary;
 import exchanges.Exchange.Status;
+import fxml.UIPage;
 import exchanges.ExchangeProvider;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
@@ -27,7 +29,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar.ButtonData;
@@ -45,18 +46,6 @@ import javafx.util.Callback;
 public class ViewController implements Initializable {
 
 	private static final Logger LOGGER = Logger.getLogger(ViewController.class.getName());
-
-	@FXML
-	private Button addButton;
-
-	@FXML
-	private Button clearButton;
-
-	@FXML
-	private Button saveButton;
-
-	@FXML
-	private Button loadButton;
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
@@ -279,6 +268,11 @@ public class ViewController implements Initializable {
 	public void clearTemplate(ActionEvent ae) {
 
 		TradeLibrary.getInstance().clearLibrary();
+		ae.consume();
+	}
+
+	public void backToMain(ActionEvent ae) {
+		Main.getInstance().changeScene(UIPage.Page.START);
 		ae.consume();
 	}
 }

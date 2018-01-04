@@ -1,11 +1,16 @@
 package widgets;
 
+import java.lang.reflect.Field;
+import java.util.logging.Logger;
+
 import core.Utils;
 import exchanges.Exchange;
 import exchanges.ExchangeProvider;
 import exchanges.Exchange.Status;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -14,6 +19,7 @@ import javafx.util.Callback;
 import widgets.Assets.Currency;
 
 public class UIUtils {
+	private static final Logger LOGGER = Logger.getLogger(UIUtils.class.getName());
 
 	public static <T> void setNumberCellFactory(TableColumn<T, Number> column) {
 		column.setCellFactory(new Callback<TableColumn<T, Number>, TableCell<T, Number>>() {
@@ -21,7 +27,7 @@ public class UIUtils {
 			public TableCell<T, Number> call(TableColumn<T, Number> param) {
 				return new TableCell<T, Number>() {
 					private final ProgressIndicator pi = new ProgressIndicator();
-					
+
 					@Override
 					protected void updateItem(final Number item, boolean empty) {
 						super.updateItem(item, empty);
@@ -37,9 +43,9 @@ public class UIUtils {
 							setGraphic(pi);
 						} else {
 							if (item.doubleValue() < 0) {
-//								setTextFill(Paint.valueOf("red"));
+								// setTextFill(Paint.valueOf("red"));
 							} else {
-								//setTextFill(Paint.valueOf("black"));
+								// setTextFill(Paint.valueOf("black"));
 							}
 							setText(Utils.decimalEightSymbols.format(item));
 							setGraphic(null);
@@ -94,6 +100,20 @@ public class UIUtils {
 			public TableCell<Currency, String> call(TableColumn<Currency, String> param) {
 
 				return new ComboBoxTableCell<Currency, String>() {
+
+					Field privateCombo = null;
+
+					{
+						try {
+							privateCombo = ComboBoxTableCell.class.getDeclaredField("comboBox");
+							privateCombo.setAccessible(true);
+
+						} catch (NullPointerException | NoSuchFieldException | SecurityException e) {
+							e.printStackTrace();
+							LOGGER.info(e.getMessage());
+						}
+					}
+
 					@Override
 					public void startEdit() {
 						Currency current = (Currency) getTableRow().getItem();
@@ -110,7 +130,37 @@ public class UIUtils {
 							}
 							getItems().setAll(newValues);
 							super.startEdit();
+
+							if (privateCombo != null) {
+
+								Platform.runLater(() -> {
+									try {
+										ComboBox<String> combo = (ComboBox<String>) privateCombo.get(this);
+										if (combo.isShowing()) {
+											combo.hide();
+										}
+										combo.show();
+									} catch (IllegalArgumentException | IllegalAccessException e) {
+										e.printStackTrace();
+										LOGGER.info(e.getMessage());
+									}
+								});
+							}
 						}
+					}
+
+					@Override
+					public void cancelEdit() {
+						super.cancelEdit();
+						Platform.runLater(() -> {
+							try {
+								ComboBox<String> combo = (ComboBox<String>) privateCombo.get(this);
+								combo.hide();
+							} catch (IllegalArgumentException | IllegalAccessException e) {
+								e.printStackTrace();
+								LOGGER.info(e.getMessage());
+							}
+						});
 					}
 
 					@Override
@@ -119,9 +169,9 @@ public class UIUtils {
 						Currency current = (Currency) getTableRow().getItem();
 						if (current != null) {
 							if (current.getCurrencyName().equals(currencySymbol)) {
-//								setStyle("-fx-background-color: gray;");
+								// setStyle("-fx-background-color: gray;");
 							} else {
-//								setStyle("");
+								// setStyle("");
 							}
 						}
 						super.updateItem(item, empty);

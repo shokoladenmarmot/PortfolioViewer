@@ -1,6 +1,7 @@
 package widgets;
 
 import java.util.Collection;
+import java.util.logging.Logger;
 
 import core.Utils;
 import javafx.application.Platform;
@@ -16,6 +17,8 @@ import javafx.scene.input.MouseEvent;
 import widgets.Assets.Currency;
 
 public class AssetsPieChart extends PieChart {
+	
+	private static final Logger LOGGER = Logger.getLogger(AssetsPieChart.class.getName());
 
 	private final Label info = new Label("");
 	private final Glow simpleGlow = new Glow();

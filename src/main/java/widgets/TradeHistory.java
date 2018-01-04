@@ -3,6 +3,7 @@ package widgets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import core.Order;
 import core.TradeLibrary;
@@ -31,6 +32,8 @@ import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 
 public class TradeHistory extends VBox {
+	
+	private static final Logger LOGGER = Logger.getLogger(TradeHistory.class.getName());
 
 	private VBox operationalVbox;
 	private Map<String, TableView<Order>> recordsMap;
@@ -91,6 +94,10 @@ public class TradeHistory extends VBox {
 	}
 
 	private void addNewOrder(Order order) {
+
+		if (order.getFrom().equals(order.getTo())) {
+			return;
+		}
 
 		TableView[] tables = new TableView[2];
 		tables[0] = recordsMap.get(order.getFrom());

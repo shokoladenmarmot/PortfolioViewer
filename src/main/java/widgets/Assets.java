@@ -5,12 +5,14 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.Map.Entry;
+import java.util.logging.Logger;
 
 import core.Order;
 import core.TradeLibrary;
 import core.Utils;
 import exchanges.Exchange;
 import exchanges.ExchangeProvider;
+import exchanges.Exchange.Status;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
@@ -38,6 +40,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 public class Assets extends VBox {
+
+	private static final Logger LOGGER = Logger.getLogger(Assets.class.getName());
 
 	public final class Currency {
 		private final String currencyName;
@@ -70,10 +74,60 @@ public class Assets extends VBox {
 				asETH.bind(amount);
 			}
 
-			// TODO: Get initial values for markets
 			marketUSD = new SimpleStringProperty();
 			marketBTC = new SimpleStringProperty();
 			marketETH = new SimpleStringProperty();
+
+			// Get initial values for markets
+			new Thread(() -> {
+
+				for (ExchangeProvider ep : ExchangeProvider.values()) {
+					Exchange e = ep.getInstance();
+					if (e.getStatus() == Status.READY) {
+						if (marketUSD.get() == null) {
+							if (e.getPairName(name, "USD") != null) {
+								marketUSD.setValue(e.getName());
+							}
+						}
+						if (marketBTC.get() == null) {
+							if (e.getPairName(name, "BTC") != null) {
+								marketBTC.setValue(e.getName());
+							}
+						}
+						if (marketETH.get() == null) {
+							if (e.getPairName(name, "ETH") != null) {
+								marketETH.setValue(e.getName());
+							}
+						}
+					} else {
+						e.getStatuProperty().addListener(new ChangeListener<Status>() {
+
+							@Override
+							public void changed(ObservableValue<? extends Status> observable, Status oldValue,
+									Status newValue) {
+								if (newValue == Status.READY) {
+									if (marketUSD.get() == null) {
+										if (e.getPairName(name, "USD") != null) {
+											marketUSD.setValue(e.getName());
+										}
+									}
+									if (marketBTC.get() == null) {
+										if (e.getPairName(name, "BTC") != null) {
+											marketBTC.setValue(e.getName());
+										}
+									}
+									if (marketETH.get() == null) {
+										if (e.getPairName(name, "ETH") != null) {
+											marketETH.setValue(e.getName());
+										}
+									}
+									e.getStatuProperty().removeListener(this);
+								}
+							}
+						});
+					}
+				}
+			}).start();
 		}
 
 		public SimpleDoubleProperty getAmountProperty() {
@@ -162,6 +216,11 @@ public class Assets extends VBox {
 
 		public void setMarketETH(String s) {
 			this.marketETH.setValue(s);
+		}
+
+		@Override
+		public String toString() {
+			return "Currency: " + currencyName + "\nAmount: " + amount.getValue();
 		}
 	}
 
@@ -320,7 +379,7 @@ public class Assets extends VBox {
 		for (Entry<String, Double> entr : values.entrySet()) {
 
 			// Don't add currencies which balance is currently 0
-			if (entr.getValue() >= 0) {
+			/* if (entr.getValue() >= 0) */ {
 
 				boolean exists = false;
 				for (Currency asCurrency : assets) {
@@ -355,6 +414,8 @@ public class Assets extends VBox {
 										newCurrency.getAmountProperty());
 								if (pairValue.get() != Utils.LOADING_VALUE) {
 									newCurrency.setAsUSD(nb.getValue().doubleValue());
+								} else {
+									newCurrency.setAsUSD(Utils.LOADING_VALUE);
 								}
 								listener = new InvalidationListener() {
 
@@ -390,6 +451,8 @@ public class Assets extends VBox {
 										newCurrency.getAmountProperty());
 								if (pairValue.get() != Utils.LOADING_VALUE) {
 									newCurrency.setAsBTC(nb.getValue().doubleValue());
+								} else {
+									newCurrency.setAsBTC(Utils.LOADING_VALUE);
 								}
 								listener = new InvalidationListener() {
 
@@ -425,6 +488,8 @@ public class Assets extends VBox {
 										newCurrency.getAmountProperty());
 								if (pairValue.get() != Utils.LOADING_VALUE) {
 									newCurrency.setAsETH(nb.getValue().doubleValue());
+								} else {
+									newCurrency.setAsETH(Utils.LOADING_VALUE);
 								}
 								listener = new InvalidationListener() {
 

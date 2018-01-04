@@ -21,14 +21,16 @@
 		<HBox alignment="CENTER" prefHeight="40.0" prefWidth="600.0"
 			spacing="20.0">
 			<children>
-				<Button fx:id="addButton" mnemonicParsing="false" onAction="#addNewTrade"
+				<Button mnemonicParsing="false" onAction="#addNewTrade"
 					text="Add New Trade" />
-				<Button fx:id="saveButton" mnemonicParsing="false" onAction="#saveTemplate"
+				<Button mnemonicParsing="false" onAction="#saveTemplate"
 					text="Save Trade History" />
-				<Button fx:id="loadButton" mnemonicParsing="false" onAction="#loadTemplate"
+				<Button mnemonicParsing="false" onAction="#loadTemplate"
 					text="Load" />
-				<Button fx:id="clearButton" mnemonicParsing="false" onAction="#clearTemplate"
+				<Button mnemonicParsing="false" onAction="#clearTemplate"
 					text="Clear All" />
+				<Button mnemonicParsing="false" onAction="#backToMain"
+					text="Back" />
 			</children>
 		</HBox>
 		<VBox alignment="TOP_CENTER" prefHeight="200.0" prefWidth="100.0"
