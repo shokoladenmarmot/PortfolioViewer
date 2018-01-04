@@ -64,6 +64,8 @@ public class TradeHistory extends VBox {
 		ScrollPane sp = new ScrollPane();
 		sp.setContent(operationalVbox);
 		sp.setFitToWidth(true);
+		sp.setMinHeight(300);
+		sp.setMaxHeight(400);
 
 		getChildren().addAll(title, sp);
 
@@ -210,7 +212,7 @@ public class TradeHistory extends VBox {
 			private final void init(Order order, Exchange e, SimpleDoubleProperty val) {
 				SimpleDoubleProperty d = e.getCurrentData(order.getSymbol());
 
-				if (d.getValue().doubleValue() != Utils.INVALID_VALUE)
+				if (d.getValue().doubleValue() != Utils.LOADING_VALUE)
 					evaluate(order, d.getValue(), val);
 
 				d.addListener(new ChangeListener<Number>() {
@@ -234,7 +236,7 @@ public class TradeHistory extends VBox {
 			}
 
 			public ObservableValue<Number> call(CellDataFeatures<Order, Number> data) {
-				SimpleDoubleProperty val = new SimpleDoubleProperty(Utils.INVALID_VALUE);
+				SimpleDoubleProperty val = new SimpleDoubleProperty(Utils.LOADING_VALUE);
 
 				Exchange e = ExchangeProvider.getMarket(data.getValue().getMarket());
 				if (e != null) {
@@ -266,7 +268,7 @@ public class TradeHistory extends VBox {
 			private final void init(Order order, Exchange e, SimpleDoubleProperty val) {
 				ObservableValue<Number> n = e.getCurrentData(order.getSymbol());
 
-				if (n.getValue().doubleValue() != Utils.INVALID_VALUE)
+				if (n.getValue().doubleValue() != Utils.LOADING_VALUE)
 					evaluate(order, n.getValue(), val);
 
 				n.addListener(new ChangeListener<Number>() {
@@ -297,7 +299,7 @@ public class TradeHistory extends VBox {
 			};
 
 			public ObservableValue<Number> call(CellDataFeatures<Order, Number> data) {
-				SimpleDoubleProperty val = new SimpleDoubleProperty(Utils.INVALID_VALUE);
+				SimpleDoubleProperty val = new SimpleDoubleProperty(Utils.LOADING_VALUE);
 				Exchange e = ExchangeProvider.getMarket(data.getValue().getMarket());
 
 				if (e != null) {

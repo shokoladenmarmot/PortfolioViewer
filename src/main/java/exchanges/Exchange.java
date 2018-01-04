@@ -226,7 +226,7 @@ public abstract class Exchange {
 	public final SimpleDoubleProperty getCurrentData(String symbol) {
 		if (getAvailablePairs().contains(symbol)) {
 			SimpleDoubleProperty result = getFromCurrentCache(symbol);
-			if (result.get() == Utils.INVALID_VALUE) {
+			if (result.get() == Utils.LOADING_VALUE) {
 
 				synchronized (futureCurrentData) {
 					if (futureCurrentData.containsKey(symbol) == false) {
@@ -240,7 +240,7 @@ public abstract class Exchange {
 			}
 			return result;
 		}
-		return new SimpleDoubleProperty(Utils.INVALID_VALUE);
+		return new SimpleDoubleProperty(Utils.LOADING_VALUE);
 	}
 
 	protected final void addToCurrentCache(String pair, Double data) {
@@ -258,7 +258,7 @@ public abstract class Exchange {
 			if (cachedCurrent.containsKey(pair)) {
 				return cachedCurrent.get(pair);
 			} else {
-				SimpleDoubleProperty p = new SimpleDoubleProperty(Utils.INVALID_VALUE);
+				SimpleDoubleProperty p = new SimpleDoubleProperty(Utils.LOADING_VALUE);
 				cachedCurrent.put(pair, p);
 				return p;
 			}
