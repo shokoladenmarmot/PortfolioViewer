@@ -25,10 +25,8 @@ import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.geometry.Side;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
-import javafx.scene.chart.PieChart;
 import javafx.scene.chart.StackedAreaChart;
 import javafx.scene.chart.StackedBarChart;
 import javafx.scene.control.Label;
@@ -167,7 +165,7 @@ public class Assets extends VBox {
 		}
 	}
 
-	private PieChart pie;
+	private AssetsPieChart pie;
 	private StackedAreaChart<String, Number> area;
 	private StackedBarChart<String, Number> bar;
 
@@ -190,10 +188,7 @@ public class Assets extends VBox {
 
 		bar = new StackedBarChart<String, Number>(new CategoryAxis(), na);
 		area = new StackedAreaChart<String, Number>(new CategoryAxis(), na2);
-
-		pie = new PieChart();
-		pie.setLabelLineLength(10);
-		pie.setLegendSide(Side.LEFT);
+		pie = new AssetsPieChart();
 
 		TradeLibrary.getInstance().getOrders().addListener(new ListChangeListener<Order>() {
 
@@ -320,7 +315,7 @@ public class Assets extends VBox {
 		}
 
 		assets.retainAll(listToRetain);
-		pie.getData().retainAll(pie.getData().filtered(p -> values.keySet().contains(p.getName())));
+		pie.cleanByRetainingOnly(values.keySet());
 
 		for (Entry<String, Double> entr : values.entrySet()) {
 
@@ -445,36 +440,7 @@ public class Assets extends VBox {
 
 					newCurrency.setAmount(entr.getValue());
 					assets.add(newCurrency);
-
-					PieChart.Data newData = new PieChart.Data(newCurrency.getCurrencyName(), 0);
-					newCurrency.getAsUSDProperty().addListener(new ChangeListener<Number>() {
-
-						@Override
-						public void changed(ObservableValue<? extends Number> observable, Number oldValue,
-								Number newValue) {
-							newData.setPieValue(newValue.doubleValue());
-						}
-					});
-					
-					/*
-					try {
-						Field privateStringField =  PieChart.Data.class.
-						        getDeclaredField("textNode");
-						privateStringField.setAccessible(true);
-						
-						Text t = (Text) privateStringField.get(newData);
-						
-						System.out.println("fieldValue = " + t.getAccessibleText());
-						
-					} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					*/
-
-					
-					pie.getData().add(newData);
-
+					pie.add(newCurrency);
 				}
 			}
 		}
