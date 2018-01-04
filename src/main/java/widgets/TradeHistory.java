@@ -3,13 +3,13 @@ package widgets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
 import core.Order;
 import core.TradeLibrary;
 import core.Utils;
 import exchanges.Exchange;
-import exchanges.Exchange.Status;
 import exchanges.ExchangeProvider;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -32,7 +32,7 @@ import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 
 public class TradeHistory extends VBox {
-	
+
 	private static final Logger LOGGER = Logger.getLogger(TradeHistory.class.getName());
 
 	private VBox operationalVbox;
@@ -247,21 +247,14 @@ public class TradeHistory extends VBox {
 
 				Exchange e = ExchangeProvider.getMarket(data.getValue().getMarket());
 				if (e != null) {
-					if (e.getStatus() == Status.READY) {
-						init(data.getValue(), e, val);
-					} else {
-						e.getStatuProperty().addListener(new ChangeListener<Status>() {
+					e.invokeWhenStatusIsReady(new Callable<Void>() {
 
-							@Override
-							public void changed(ObservableValue<? extends Status> observable, Status oldValue,
-									Status newValue) {
-								if (newValue == Status.READY) {
-									init(data.getValue(), e, val);
-									e.getStatuProperty().removeListener(this);
-								}
-							}
-						});
-					}
+						@Override
+						public Void call() throws Exception {
+							init(data.getValue(), e, val);
+							return null;
+						}
+					});
 				}
 				return val;
 			}
@@ -310,21 +303,14 @@ public class TradeHistory extends VBox {
 				Exchange e = ExchangeProvider.getMarket(data.getValue().getMarket());
 
 				if (e != null) {
-					if (e.getStatus() == Status.READY) {
-						init(data.getValue(), e, val);
-					} else {
-						e.getStatuProperty().addListener(new ChangeListener<Status>() {
+					e.invokeWhenStatusIsReady(new Callable<Void>() {
 
-							@Override
-							public void changed(ObservableValue<? extends Status> observable, Status oldValue,
-									Status newValue) {
-								if (newValue == Status.READY) {
-									init(data.getValue(), e, val);
-									e.getStatuProperty().removeListener(this);
-								}
-							}
-						});
-					}
+						@Override
+						public Void call() throws Exception {
+							init(data.getValue(), e, val);
+							return null;
+						}
+					});
 				}
 				return val;
 			}

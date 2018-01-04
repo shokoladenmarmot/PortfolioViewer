@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.Map.Entry;
+import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
 import core.Order;
@@ -12,7 +13,6 @@ import core.TradeLibrary;
 import core.Utils;
 import exchanges.Exchange;
 import exchanges.ExchangeProvider;
-import exchanges.Exchange.Status;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
@@ -83,49 +83,28 @@ public class Assets extends VBox {
 
 				for (ExchangeProvider ep : ExchangeProvider.values()) {
 					Exchange e = ep.getInstance();
-					if (e.getStatus() == Status.READY) {
-						if (marketUSD.get() == null) {
-							if (e.getPairName(name, "USD") != null) {
-								marketUSD.setValue(e.getName());
-							}
-						}
-						if (marketBTC.get() == null) {
-							if (e.getPairName(name, "BTC") != null) {
-								marketBTC.setValue(e.getName());
-							}
-						}
-						if (marketETH.get() == null) {
-							if (e.getPairName(name, "ETH") != null) {
-								marketETH.setValue(e.getName());
-							}
-						}
-					} else {
-						e.getStatuProperty().addListener(new ChangeListener<Status>() {
+					e.invokeWhenStatusIsReady(new Callable<Void>() {
 
-							@Override
-							public void changed(ObservableValue<? extends Status> observable, Status oldValue,
-									Status newValue) {
-								if (newValue == Status.READY) {
-									if (marketUSD.get() == null) {
-										if (e.getPairName(name, "USD") != null) {
-											marketUSD.setValue(e.getName());
-										}
-									}
-									if (marketBTC.get() == null) {
-										if (e.getPairName(name, "BTC") != null) {
-											marketBTC.setValue(e.getName());
-										}
-									}
-									if (marketETH.get() == null) {
-										if (e.getPairName(name, "ETH") != null) {
-											marketETH.setValue(e.getName());
-										}
-									}
-									e.getStatuProperty().removeListener(this);
+						@Override
+						public Void call() throws Exception {
+							if (marketUSD.get() == null) {
+								if (e.getPairName(name, "USD") != null) {
+									marketUSD.setValue(e.getName());
 								}
 							}
-						});
-					}
+							if (marketBTC.get() == null) {
+								if (e.getPairName(name, "BTC") != null) {
+									marketBTC.setValue(e.getName());
+								}
+							}
+							if (marketETH.get() == null) {
+								if (e.getPairName(name, "ETH") != null) {
+									marketETH.setValue(e.getName());
+								}
+							}
+							return null;
+						}
+					});
 				}
 			}).start();
 		}

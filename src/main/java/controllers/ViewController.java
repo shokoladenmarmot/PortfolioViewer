@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -19,8 +20,8 @@ import core.Utils;
 import core.Order;
 import core.XMLFactory;
 import core.TradeLibrary;
-import exchanges.Exchange.Status;
 import fxml.UIPage;
+import exchanges.Exchange;
 import exchanges.ExchangeProvider;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
@@ -75,32 +76,20 @@ public class ViewController implements Initializable {
 			Set<String> tempSet = new HashSet<String>();
 
 			for (ExchangeProvider ep : ExchangeProvider.values()) {
-				if (ep.getInstance().getStatus() != Status.READY) {
-					ep.getInstance().getStatuProperty().addListener(new ChangeListener<Status>() {
-						@Override
-						public void changed(ObservableValue<? extends Status> observable, Status oldValue,
-								Status newValue) {
-							Platform.runLater(() -> {
-								synchronized (unsortedList) {
-									tempSet.addAll(ep.getInstance().getAvailableCurrency());
-									unsortedList.setAll(tempSet);
-								}
+				Exchange e = ep.getInstance();
+				e.invokeWhenStatusIsReady(new Callable<Void>() {
 
-								ep.getInstance().getStatuProperty().removeListener(this);
-							});
-						}
-					});
-				} else {
-					tempSet.addAll(ep.getInstance().getAvailableCurrency());
-					unsortedList.setAll(tempSet);
-					unsortedList.sort(new Comparator<String>() {
-						@Override
-						public int compare(String o1, String o2) {
-							return o1.compareTo(o2);
-						}
-
-					});
-				}
+					@Override
+					public Void call() throws Exception {
+						Platform.runLater(() -> {
+							synchronized (unsortedList) {
+								tempSet.addAll(ep.getInstance().getAvailableCurrency());
+								unsortedList.setAll(tempSet);
+							}
+						});
+						return null;
+					}
+				});
 			}
 
 			ComboBox<String> fromCmb = new ComboBox<String>();

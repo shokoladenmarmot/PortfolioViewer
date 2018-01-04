@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -19,6 +20,8 @@ import core.Utils;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.image.Image;
@@ -269,6 +272,37 @@ public abstract class Exchange {
 		return STATUS;
 	}
 
+	public final void invokeWhenStatusIsReady(final Callable<Void> v) {
+		synchronized (this) {
+			if (STATUS.get() == Status.READY) {
+				try {
+					v.call();
+				} catch (Exception e) {
+					e.printStackTrace();
+					LOGGER.info(e.getMessage());
+				}
+			} else {
+				STATUS.addListener(new ChangeListener<Status>() {
+
+					@Override
+					public void changed(ObservableValue<? extends Status> observable, Status oldValue,
+							Status newValue) {
+
+						if (newValue == Status.READY) {
+							try {
+								v.call();
+								STATUS.removeListener(this);
+							} catch (Exception e) {
+								e.printStackTrace();
+								LOGGER.info(e.getMessage());
+							}
+						}
+					}
+				});
+			}
+		}
+	}
+
 	public final Status getStatus() {
 
 		synchronized (this) {
@@ -278,7 +312,7 @@ public abstract class Exchange {
 
 	public final void setStatus(Status s) {
 		synchronized (this) {
-			 STATUS.set(s);
+			STATUS.set(s);
 		}
 	}
 
