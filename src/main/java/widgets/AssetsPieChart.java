@@ -17,7 +17,7 @@ import javafx.scene.input.MouseEvent;
 import widgets.Assets.Currency;
 
 public class AssetsPieChart extends PieChart {
-	
+
 	private static final Logger LOGGER = Logger.getLogger(AssetsPieChart.class.getName());
 
 	private final Label info = new Label("");
@@ -85,6 +85,7 @@ public class AssetsPieChart extends PieChart {
 	}
 
 	public void cleanByRetainingOnly(Collection<String> s) {
-		getData().retainAll(getData().filtered(p -> s.contains(p.getName())));
+		getData().retainAll(getData().filtered(p -> s.contains(p.getName().substring(0,
+				((p.getName().indexOf(' ') == -1) ? p.getName().length() : p.getName().indexOf(' '))))));
 	}
 }

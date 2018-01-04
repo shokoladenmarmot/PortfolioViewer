@@ -78,6 +78,111 @@ public class Assets extends VBox {
 			marketBTC = new SimpleStringProperty();
 			marketETH = new SimpleStringProperty();
 
+			marketUSD.addListener(new ChangeListener<String>() {
+				private NumberBinding nb = null;
+				private InvalidationListener listener = null;
+
+				@Override
+				public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+					if (nb != null) {
+						nb.removeListener(listener);
+					}
+					String asUSD = getMarketUSD();
+					if ((asUSD != null) && (asUSD.isEmpty() == false)) {
+
+						Exchange e = ExchangeProvider.getMarket(asUSD);
+						String pair = e.getPairName(name, "USD");
+						SimpleDoubleProperty pairValue = e.getCurrentData(pair);
+						nb = Bindings.multiply(
+								e.isBase(pair, "USD") ? pairValue.divide(pairValue.multiply(pairValue)) : pairValue,
+								getAmountProperty());
+						if (pairValue.get() != Utils.LOADING_VALUE) {
+							setAsUSD(nb.getValue().doubleValue());
+						} else {
+							setAsUSD(Utils.LOADING_VALUE);
+						}
+						listener = new InvalidationListener() {
+
+							@Override
+							public void invalidated(Observable observable) {
+								setAsUSD(nb.getValue().doubleValue());
+							}
+						};
+						nb.addListener(listener);
+					}
+				}
+			});
+
+			marketBTC.addListener(new ChangeListener<String>() {
+				private NumberBinding nb = null;
+				private InvalidationListener listener = null;
+
+				@Override
+				public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+					if (nb != null) {
+						nb.removeListener(listener);
+					}
+					String asBTC = getMarketBTC();
+					if ((asBTC != null) && (asBTC.isEmpty() == false)) {
+
+						Exchange e = ExchangeProvider.getMarket(asBTC);
+						String pair = e.getPairName(name, "BTC");
+						SimpleDoubleProperty pairValue = e.getCurrentData(pair);
+						nb = Bindings.multiply(
+								e.isBase(pair, "BTC") ? pairValue.divide(pairValue.multiply(pairValue)) : pairValue,
+								getAmountProperty());
+						if (pairValue.get() != Utils.LOADING_VALUE) {
+							setAsBTC(nb.getValue().doubleValue());
+						} else {
+							setAsBTC(Utils.LOADING_VALUE);
+						}
+						listener = new InvalidationListener() {
+
+							@Override
+							public void invalidated(Observable observable) {
+								setAsBTC(nb.getValue().doubleValue());
+							}
+						};
+						nb.addListener(listener);
+					}
+				}
+			});
+
+			marketETH.addListener(new ChangeListener<String>() {
+				private NumberBinding nb = null;
+				private InvalidationListener listener = null;
+
+				@Override
+				public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+					if (nb != null) {
+						nb.removeListener(listener);
+					}
+					String asETH = getMarketETH();
+					if ((asETH != null) && (asETH.isEmpty() == false)) {
+
+						Exchange e = ExchangeProvider.getMarket(asETH);
+						String pair = e.getPairName(getCurrencyName(), "ETH");
+						SimpleDoubleProperty pairValue = e.getCurrentData(pair);
+						nb = Bindings.multiply(
+								e.isBase(pair, "ETH") ? pairValue.divide(pairValue.multiply(pairValue)) : pairValue,
+								getAmountProperty());
+						if (pairValue.get() != Utils.LOADING_VALUE) {
+							setAsETH(nb.getValue().doubleValue());
+						} else {
+							setAsETH(Utils.LOADING_VALUE);
+						}
+						listener = new InvalidationListener() {
+
+							@Override
+							public void invalidated(Observable observable) {
+								setAsETH(nb.getValue().doubleValue());
+							}
+						};
+						nb.addListener(listener);
+					}
+				}
+			});
+
 			// Get initial values for markets
 			new Thread(() -> {
 
@@ -370,117 +475,6 @@ public class Assets extends VBox {
 				}
 				if (!exists) {
 					Currency newCurrency = new Currency(entr.getKey());
-
-					newCurrency.getMarketUSDProperty().addListener(new ChangeListener<String>() {
-						private NumberBinding nb = null;
-						private InvalidationListener listener = null;
-
-						@Override
-						public void changed(ObservableValue<? extends String> observable, String oldValue,
-								String newValue) {
-							if (nb != null) {
-								nb.removeListener(listener);
-							}
-							String asUSD = newCurrency.getMarketUSD();
-							if ((asUSD != null) && (asUSD.isEmpty() == false)) {
-
-								Exchange e = ExchangeProvider.getMarket(asUSD);
-								String pair = e.getPairName(newCurrency.getCurrencyName(), "USD");
-								SimpleDoubleProperty pairValue = e.getCurrentData(pair);
-								nb = Bindings.multiply(
-										e.isBase(pair, "USD") ? pairValue.divide(pairValue.multiply(pairValue))
-												: pairValue,
-										newCurrency.getAmountProperty());
-								if (pairValue.get() != Utils.LOADING_VALUE) {
-									newCurrency.setAsUSD(nb.getValue().doubleValue());
-								} else {
-									newCurrency.setAsUSD(Utils.LOADING_VALUE);
-								}
-								listener = new InvalidationListener() {
-
-									@Override
-									public void invalidated(Observable observable) {
-										newCurrency.setAsUSD(nb.getValue().doubleValue());
-									}
-								};
-								nb.addListener(listener);
-							}
-						}
-					});
-
-					newCurrency.getMarketBTCProperty().addListener(new ChangeListener<String>() {
-						private NumberBinding nb = null;
-						private InvalidationListener listener = null;
-
-						@Override
-						public void changed(ObservableValue<? extends String> observable, String oldValue,
-								String newValue) {
-							if (nb != null) {
-								nb.removeListener(listener);
-							}
-							String asBTC = newCurrency.getMarketBTC();
-							if ((asBTC != null) && (asBTC.isEmpty() == false)) {
-
-								Exchange e = ExchangeProvider.getMarket(asBTC);
-								String pair = e.getPairName(newCurrency.getCurrencyName(), "BTC");
-								SimpleDoubleProperty pairValue = e.getCurrentData(pair);
-								nb = Bindings.multiply(
-										e.isBase(pair, "BTC") ? pairValue.divide(pairValue.multiply(pairValue))
-												: pairValue,
-										newCurrency.getAmountProperty());
-								if (pairValue.get() != Utils.LOADING_VALUE) {
-									newCurrency.setAsBTC(nb.getValue().doubleValue());
-								} else {
-									newCurrency.setAsBTC(Utils.LOADING_VALUE);
-								}
-								listener = new InvalidationListener() {
-
-									@Override
-									public void invalidated(Observable observable) {
-										newCurrency.setAsBTC(nb.getValue().doubleValue());
-									}
-								};
-								nb.addListener(listener);
-							}
-						}
-					});
-
-					newCurrency.getMarketETHProperty().addListener(new ChangeListener<String>() {
-						private NumberBinding nb = null;
-						private InvalidationListener listener = null;
-
-						@Override
-						public void changed(ObservableValue<? extends String> observable, String oldValue,
-								String newValue) {
-							if (nb != null) {
-								nb.removeListener(listener);
-							}
-							String asETH = newCurrency.getMarketETH();
-							if ((asETH != null) && (asETH.isEmpty() == false)) {
-
-								Exchange e = ExchangeProvider.getMarket(asETH);
-								String pair = e.getPairName(newCurrency.getCurrencyName(), "ETH");
-								SimpleDoubleProperty pairValue = e.getCurrentData(pair);
-								nb = Bindings.multiply(
-										e.isBase(pair, "ETH") ? pairValue.divide(pairValue.multiply(pairValue))
-												: pairValue,
-										newCurrency.getAmountProperty());
-								if (pairValue.get() != Utils.LOADING_VALUE) {
-									newCurrency.setAsETH(nb.getValue().doubleValue());
-								} else {
-									newCurrency.setAsETH(Utils.LOADING_VALUE);
-								}
-								listener = new InvalidationListener() {
-
-									@Override
-									public void invalidated(Observable observable) {
-										newCurrency.setAsETH(nb.getValue().doubleValue());
-									}
-								};
-								nb.addListener(listener);
-							}
-						}
-					});
 
 					newCurrency.setAmount(entr.getValue());
 					assets.add(newCurrency);
