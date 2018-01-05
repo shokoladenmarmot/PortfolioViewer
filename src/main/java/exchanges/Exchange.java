@@ -85,15 +85,15 @@ public abstract class Exchange {
 	public class CoinGraph {
 
 		public class CoinNode implements Comparable<CoinNode> {
-			public Set<Edge> edges;
-			public final String name;
+			private Set<Edge> edges;
+			private final String name;
 
-			public CoinNode(String n) {
+			private CoinNode(String n) {
 				name = n;
 				edges = new TreeSet<Edge>();
 			}
 
-			public boolean addEdge(Edge e) {
+			private final boolean addEdge(Edge e) {
 				return edges.add(e);
 			}
 
@@ -120,12 +120,11 @@ public abstract class Exchange {
 		}
 
 		public class Edge implements Comparable<Edge> {
-			public final CoinNode from;
-			public final CoinNode to;
+			private final CoinNode from;
+			private final CoinNode to;
+			private final String symbol;
 
-			public final String symbol;
-
-			public Edge(CoinNode f, CoinNode t, String s) {
+			private Edge(CoinNode f, CoinNode t, String s) {
 				from = f;
 				to = t;
 				symbol = s;
@@ -152,15 +151,18 @@ public abstract class Exchange {
 			}
 		}
 
-		public Map<String, CoinNode> coinList;
-		public Set<Edge> edgeList;
+		private Map<String, CoinNode> coinList;
+		private Set<Edge> edgeList;
 
 		public CoinGraph() {
 			coinList = new TreeMap<String, CoinNode>();
 			edgeList = new TreeSet<Edge>();
 		}
 
-		public boolean addCoin(String nodeName) {
+		public final boolean addCoin(String nodeName) {
+			if ((nodeName == null) || nodeName.isEmpty())
+				return false;
+
 			if (coinList.get(nodeName) == null) {
 				coinList.put(nodeName, new CoinNode(nodeName));
 				return true;
@@ -168,7 +170,10 @@ public abstract class Exchange {
 			return false;
 		}
 
-		public boolean addEdge(String from, String to, String symbol) {
+		public final boolean addEdge(String from, String to, String symbol) {
+			if ((from == null) || (to == null) || (symbol == null) || from.isEmpty() || to.isEmpty() || symbol.isEmpty()
+					|| from.equals(to))
+				return false;
 
 			CoinNode fromNode = coinList.get(from);
 			CoinNode toNode = coinList.get(to);
@@ -189,15 +194,18 @@ public abstract class Exchange {
 			return edgeList.add(newEdge);
 		}
 
-		public Collection<String> getAllCoinNames() {
+		public final Collection<String> getAllCoinNames() {
 			return coinList.keySet();
 		}
 
-		public Collection<String> getAllEdgeNames() {
+		public final Collection<String> getAllEdgeNames() {
 			return edgeList.parallelStream().map(a -> a.symbol).collect(Collectors.toList());
 		}
 
-		public Collection<String> getAllDirectCoinsFromCoin(String coinName) {
+		public final Collection<String> getAllDirectCoinsFromCoin(String coinName) {
+			if ((coinName == null) || coinName.isEmpty())
+				return Collections.emptyList();
+
 			if (coinList.containsKey(coinName)) {
 				CoinNode cn = coinList.get(coinName);
 				return cn.edges.parallelStream().map(a -> a.from.name.equals(coinName) ? a.to.name : a.from.name)
@@ -206,7 +214,10 @@ public abstract class Exchange {
 			return Collections.emptyList();
 		}
 
-		public String getPairName(String from, String to) {
+		public final String getPairName(String from, String to) {
+			if ((from == null) || from.isEmpty() || (to == null) || to.isEmpty() || from.equals(to))
+				return null;
+
 			if (coinList.containsKey(from) && coinList.containsKey(to)) {
 				CoinNode cn = coinList.get(from);
 				Optional<Edge> e = cn.edges.parallelStream().filter(a -> a.from.name.equals(to) || a.to.name.equals(to))
@@ -226,10 +237,8 @@ public abstract class Exchange {
 	// URL to the exchanges API
 	protected String url;
 
+	// The coin graph containing information about available coins on this market
 	protected CoinGraph coinGraph;
-
-	// Coin name -> {[Coin name, Pair]}
-	protected Map<String, List<Pair<String, String>>> coinMap;
 
 	// Set containing all available pairs
 	protected Set<String> availablePairs;
@@ -254,8 +263,6 @@ public abstract class Exchange {
 		LOGGER.info("Initiate exchange");
 
 		coinGraph = new CoinGraph();
-		coinMap = new HashMap<String, List<Pair<String, String>>>();
-		// NOTE: Change to HashSet for performance
 		availablePairs = new TreeSet<String>();
 		cachedOHLC = new HashMap<String, List<Pair<Integer, ObservableList<PairData>>>>();
 		cachedCurrent = new HashMap<String, SimpleDoubleProperty>();
@@ -278,7 +285,7 @@ public abstract class Exchange {
 	public final Collection<String> getAvailableCurrency() {
 
 		if (getStatus() != Status.INIT) {
-			return coinMap.keySet();
+			return coinGraph.getAllCoinNames();
 		}
 		return Collections.emptyList();
 	}
@@ -286,35 +293,21 @@ public abstract class Exchange {
 	public final Collection<String> getAvailablePairs() {
 
 		if (getStatus() != Status.INIT) {
-			if (availablePairs.isEmpty()) {
-				for (List<Pair<String, String>> l : coinMap.values()) {
-					for (Pair<String, String> pair : l) {
-						availablePairs.add(pair.getValue());
-					}
-				}
-			}
-			return availablePairs;
+			return coinGraph.getAllEdgeNames();
 		}
 		return Collections.emptyList();
 	}
 
-	public final List<Pair<String, String>> getPairsForCurrency(String currency) {
+	public final Collection<String> getPairsForCurrency(String currency) {
 		if (getStatus() != Status.INIT) {
-			List<Pair<String, String>> result = coinMap.get(currency);
-			return (result != null) ? result : Collections.emptyList();
+			return coinGraph.getAllDirectCoinsFromCoin(currency);
 		}
 		return Collections.emptyList();
 	}
 
 	public final String getPairName(String from, String to) {
 		if (getStatus() != Status.INIT) {
-			if (coinMap.containsKey(from)) {
-				for (Pair<String, String> pair : coinMap.get(from)) {
-					if (pair.getKey().equals(to)) {
-						return pair.getValue();
-					}
-				}
-			}
+			return coinGraph.getPairName(from, to);
 		}
 		return null;
 	}

@@ -8,8 +8,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import javafx.util.Pair;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -52,8 +50,8 @@ public class Kraken extends Exchange {
 					String altName = result.getJSONObject("result").getJSONObject(symb).getString("altname");
 					altName = convertToHumanReadableSymbol(altName);
 					symbolAltname.put(symb, altName);
-					List<Pair<String, String>> list = new LinkedList<Pair<String, String>>();
-					coinMap.put(altName, list);
+
+					coinGraph.addCoin(altName);
 				}
 
 				// Get all tradable pairs
@@ -69,19 +67,12 @@ public class Kraken extends Exchange {
 					if (pair.endsWith(".d"))
 						continue;
 
-					// String altName = ((JSONObject)
-					// result.get("result")).getJSONObject(pair).getString("altname");
-
 					String quote = symbolAltname
 							.get(result.getJSONObject("result").getJSONObject(pair).getString("quote"));
 					String base = symbolAltname
 							.get(result.getJSONObject("result").getJSONObject(pair).getString("base"));
 
-					List<Pair<String, String>> quoteList = coinMap.get(quote);
-					List<Pair<String, String>> baseList = coinMap.get(base);
-
-					quoteList.add(new Pair<String, String>(base, pair));
-					baseList.add(new Pair<String, String>(quote, pair));
+					coinGraph.addEdge(quote, base, pair);
 				}
 				setStatus(Status.READY);
 				LOGGER.info("Finish: Populate list of pairs");

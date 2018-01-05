@@ -4,6 +4,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.ResourceBundle;
+import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
 import Start.Main;
@@ -11,9 +12,10 @@ import exchanges.Exchange;
 import exchanges.Exchange.PairData;
 import exchanges.ExchangeProvider;
 import fxml.UIPage;
+import javafx.application.Platform;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.chart.CategoryAxis;
@@ -167,11 +169,43 @@ public class ChartController implements Initializable {
 		if ((pairName == null) || pairName.trim().isEmpty())
 			return;
 
-		series1.getData().clear();
-		// ObservableList<PairData> l = ;
+		ObservableList<PairData> dataList = exchange.getOHLCData(pairName, 1440);
 
-		exchange.getOHLCData(pairName, 1440).forEach(pd -> {
-			series1.getData().add(new Data<String, Double>(chartFormatter.format(pd.getDate()), pd.getValue()));
-		});
+		Callable<Void> v = new Callable<Void>() {
+
+			@Override
+			public Void call() throws Exception {
+				Platform.runLater(() -> {
+					series1.getData().clear();
+					dataList.forEach(pd -> {
+						series1.getData()
+								.add(new Data<String, Double>(chartFormatter.format(pd.getDate()), pd.getValue()));
+					});
+				});
+				return null;
+			}
+		};
+
+		if (dataList.isEmpty()) {
+			dataList.addListener(new ListChangeListener<PairData>() {
+
+				@Override
+				public void onChanged(Change<? extends PairData> c) {
+					try {
+						v.call();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					dataList.removeListener(this);
+				}
+
+			});
+		} else {
+			try {
+				v.call();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 	}
 }

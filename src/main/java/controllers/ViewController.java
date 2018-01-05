@@ -13,7 +13,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import Start.Main;
 import core.Utils;
@@ -110,8 +109,7 @@ public class ViewController implements Initializable {
 					Set<String> toCurrencies = new TreeSet<String>();
 
 					for (ExchangeProvider ep : ExchangeProvider.values()) {
-						toCurrencies.addAll(ep.getInstance().getPairsForCurrency(newValue).stream().map(p -> p.getKey())
-								.collect(Collectors.toList()));
+						toCurrencies.addAll(ep.getInstance().getPairsForCurrency(newValue));
 					}
 					toCmb.getItems().addAll(toCurrencies);
 				}

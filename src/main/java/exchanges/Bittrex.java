@@ -10,7 +10,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import core.JSONFactory;
-import javafx.util.Pair;
 
 public class Bittrex extends Exchange {
 
@@ -59,7 +58,7 @@ public class Bittrex extends Exchange {
 					String symbol = currency.getString("Currency");
 					// String fullName = currency.getString("CurrencyLong");
 
-					coinMap.put(symbol, new LinkedList<Pair<String, String>>());
+					coinGraph.addCoin(symbol);
 				}
 
 				result = JSONFactory.getJSONObject(urlV1 + "getmarkets");
@@ -78,11 +77,7 @@ public class Bittrex extends Exchange {
 					String base = pair.getString("BaseCurrency");
 					String quote = pair.getString("MarketCurrency");
 
-					List<Pair<String, String>> quoteList = coinMap.get(quote);
-					List<Pair<String, String>> baseList = coinMap.get(base);
-
-					baseList.add(new Pair<String, String>(quote, symbolName));
-					quoteList.add(new Pair<String, String>(base, symbolName));
+					coinGraph.addEdge(base, quote, symbolName);
 				}
 
 				setStatus(Status.READY);

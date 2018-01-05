@@ -9,7 +9,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import core.JSONFactory;
-import javafx.util.Pair;
 
 public class Binance extends Exchange {
 
@@ -50,20 +49,10 @@ public class Binance extends Exchange {
 					String base = currency.getString("baseAsset");
 					String quote = currency.getString("quoteAsset");
 
-					List<Pair<String, String>> baseList = coinMap.get(base);
-					List<Pair<String, String>> quoteList = coinMap.get(quote);
+					coinGraph.addCoin(base);
+					coinGraph.addCoin(quote);
 
-					if (baseList == null) {
-						baseList = new LinkedList<Pair<String, String>>();
-						coinMap.put(base, baseList);
-					}
-					if (quoteList == null) {
-						quoteList = new LinkedList<Pair<String, String>>();
-						coinMap.put(quote, quoteList);
-					}
-
-					baseList.add(new Pair<String, String>(quote, symbol));
-					quoteList.add(new Pair<String, String>(base, symbol));
+					coinGraph.addEdge(base, quote, symbol);
 				}
 
 				setStatus(Status.READY);

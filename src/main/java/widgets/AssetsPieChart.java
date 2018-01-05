@@ -62,7 +62,7 @@ public class AssetsPieChart extends PieChart {
 				}
 				Point2D point = sceneToLocal(event.getSceneX(), event.getSceneY(), true);
 
-				info.setText(Utils.decimalTwoSymbols.format((total / newData.getPieValue()) * 100) + "%");
+				info.setText(Utils.decimalTwoSymbols.format((newData.getPieValue() / total) * 100) + "%");
 
 				info.setTranslateX(point.getX() - com.sun.javafx.tk.Toolkit.getToolkit().getFontLoader()
 						.computeStringWidth(info.getText(), info.getFont()) / 2);
