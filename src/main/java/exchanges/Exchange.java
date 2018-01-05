@@ -8,12 +8,15 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import Start.Main;
 import core.Utils;
@@ -54,14 +57,176 @@ public abstract class Exchange {
 		}
 	}
 
-	// Current status of the service
+	public class RequestPath {
+		public final Exchange exchange;
+		public final String symbol;
+		public final boolean invert;
 
+		private RequestPath(Exchange e, String s, boolean i) {
+			exchange = e;
+			symbol = s;
+			invert = i;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (o == this)
+				return true;
+			if ((o instanceof RequestPath) == false)
+				return false;
+
+			return ((RequestPath) o).exchange.equals(exchange) && ((RequestPath) o).symbol.equals(symbol)
+					&& (((RequestPath) o).invert == invert);
+		}
+
+		// TODO: hashCode
+	}
+
+	public class CoinGraph {
+
+		public class CoinNode implements Comparable<CoinNode> {
+			public Set<Edge> edges;
+			public final String name;
+
+			public CoinNode(String n) {
+				name = n;
+				edges = new TreeSet<Edge>();
+			}
+
+			public boolean addEdge(Edge e) {
+				return edges.add(e);
+			}
+
+			@Override
+			public int compareTo(CoinNode o) {
+				return name.compareTo(o.name);
+			}
+
+			@Override
+			public int hashCode() {
+				return name.hashCode();
+			}
+
+			@Override
+			public boolean equals(Object o) {
+				if (o == this)
+					return true;
+				if ((o instanceof CoinNode) == false)
+					return false;
+
+				return ((CoinNode) o).name.equals(name);
+			}
+
+		}
+
+		public class Edge implements Comparable<Edge> {
+			public final CoinNode from;
+			public final CoinNode to;
+
+			public final String symbol;
+
+			public Edge(CoinNode f, CoinNode t, String s) {
+				from = f;
+				to = t;
+				symbol = s;
+			}
+
+			@Override
+			public boolean equals(Object o) {
+				if (o == this)
+					return true;
+				if ((o instanceof Edge) == false)
+					return false;
+
+				return ((Edge) o).from.equals(from) && ((Edge) o).to.equals(to) && ((Edge) o).symbol.equals(symbol);
+			}
+
+			@Override
+			public int hashCode() {
+				return symbol.hashCode();
+			}
+
+			@Override
+			public int compareTo(Edge o) {
+				return symbol.compareTo(o.symbol);
+			}
+		}
+
+		public Map<String, CoinNode> coinList;
+		public Set<Edge> edgeList;
+
+		public CoinGraph() {
+			coinList = new TreeMap<String, CoinNode>();
+			edgeList = new TreeSet<Edge>();
+		}
+
+		public boolean addCoin(String nodeName) {
+			if (coinList.get(nodeName) == null) {
+				coinList.put(nodeName, new CoinNode(nodeName));
+				return true;
+			}
+			return false;
+		}
+
+		public boolean addEdge(String from, String to, String symbol) {
+
+			CoinNode fromNode = coinList.get(from);
+			CoinNode toNode = coinList.get(to);
+
+			if ((fromNode == null) || (toNode == null)) {
+				return false;
+			}
+
+			Edge newEdge = new Edge(fromNode, toNode, symbol);
+
+			if (edgeList.contains(newEdge)) {
+				return false;
+			}
+
+			fromNode.addEdge(newEdge);
+			toNode.addEdge(newEdge);
+
+			return edgeList.add(newEdge);
+		}
+
+		public Collection<String> getAllCoinNames() {
+			return coinList.keySet();
+		}
+
+		public Collection<String> getAllEdgeNames() {
+			return edgeList.parallelStream().map(a -> a.symbol).collect(Collectors.toList());
+		}
+
+		public Collection<String> getAllDirectCoinsFromCoin(String coinName) {
+			if (coinList.containsKey(coinName)) {
+				CoinNode cn = coinList.get(coinName);
+				return cn.edges.parallelStream().map(a -> a.from.name.equals(coinName) ? a.to.name : a.from.name)
+						.collect(Collectors.toList());
+			}
+			return Collections.emptyList();
+		}
+
+		public String getPairName(String from, String to) {
+			if (coinList.containsKey(from) && coinList.containsKey(to)) {
+				CoinNode cn = coinList.get(from);
+				Optional<Edge> e = cn.edges.parallelStream().filter(a -> a.from.name.equals(to) || a.to.name.equals(to))
+						.findFirst();
+
+				return e.isPresent() ? e.get().symbol : null;
+			}
+			return null;
+		}
+	}
+
+	// Current status of the service
 	private ObjectProperty<Status> STATUS;
 
 	protected String exchangeName;
 	protected Image logo;
 	// URL to the exchanges API
 	protected String url;
+
+	protected CoinGraph coinGraph;
 
 	// Coin name -> {[Coin name, Pair]}
 	protected Map<String, List<Pair<String, String>>> coinMap;
@@ -88,6 +253,7 @@ public abstract class Exchange {
 	protected void init() {
 		LOGGER.info("Initiate exchange");
 
+		coinGraph = new CoinGraph();
 		coinMap = new HashMap<String, List<Pair<String, String>>>();
 		// NOTE: Change to HashSet for performance
 		availablePairs = new TreeSet<String>();
