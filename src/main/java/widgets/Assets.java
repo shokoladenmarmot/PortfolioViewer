@@ -161,7 +161,7 @@ public class Assets extends VBox {
 					if ((asETH != null) && (asETH.isEmpty() == false)) {
 
 						Exchange e = ExchangeProvider.getMarket(asETH);
-						String pair = e.getPairName(getCurrencyName(), "ETH");
+						String pair = e.getPairName(name, "ETH");
 						SimpleDoubleProperty pairValue = e.getCurrentData(pair);
 						nb = Bindings.multiply(
 								e.isBase(pair, "ETH") ? pairValue.divide(pairValue.multiply(pairValue)) : pairValue,
