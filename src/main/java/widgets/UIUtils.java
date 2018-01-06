@@ -36,7 +36,7 @@ public class UIUtils {
 							setGraphic(null);
 							return;
 						}
-						if (item.equals(Utils.LOADING_VALUE)) {
+						if (Utils.isLoading(item)) {
 							setText(null);
 							pi.setPrefWidth(15);
 							pi.setPrefHeight(15);
@@ -71,7 +71,7 @@ public class UIUtils {
 							setGraphic(null);
 							return;
 						}
-						if (item.equals(Utils.LOADING_VALUE)) {
+						if (Utils.isLoading(item)) {
 							setText(null);
 							pi.setPrefWidth(15);
 							pi.setPrefHeight(15);
@@ -116,6 +116,7 @@ public class UIUtils {
 
 					@Override
 					public void startEdit() {
+
 						Currency current = (Currency) getTableRow().getItem();
 						if (!current.getCurrencyName().equals(currencySymbol)) {
 							ObservableList<String> newValues = FXCollections.observableArrayList();
@@ -123,7 +124,7 @@ public class UIUtils {
 							for (ExchangeProvider ep : ExchangeProvider.values()) {
 								Exchange e = ep.getInstance();
 								if (e.getStatus() == Status.READY) {
-									if (e.getPairName(current.getCurrencyName(), currencySymbol) != null) {
+									if (e.getAvailableCurrency().contains(current.getCurrencyName())) {
 										newValues.add(e.getName());
 									}
 								}
@@ -136,9 +137,11 @@ public class UIUtils {
 								Platform.runLater(() -> {
 									try {
 										ComboBox<String> combo = (ComboBox<String>) privateCombo.get(this);
+										combo.setDisable(true);
 										if (combo.isShowing()) {
 											combo.hide();
 										}
+										combo.setDisable(false);
 										combo.show();
 									} catch (IllegalArgumentException | IllegalAccessException e) {
 										e.printStackTrace();

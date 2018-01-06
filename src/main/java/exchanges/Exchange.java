@@ -15,7 +15,6 @@ import java.util.Stack;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -23,10 +22,12 @@ import java.util.stream.Collectors;
 import Start.Main;
 import core.Utils;
 import exchanges.Exchange.CoinGraph.Edge;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableNumberValue;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -331,12 +332,6 @@ public abstract class Exchange {
 	// Map storing current price
 	private HashMap<String, SimpleDoubleProperty> cachedCurrent;
 
-	// Map to store scheduled calls for current data updates
-	private HashMap<String, ScheduledFuture<?>> futureCurrentData;
-
-	// Map to store scheduled calls for updates
-	private Set<Pair<Integer, String>> futureOHLC;
-
 	public Exchange() {
 		STATUS = new SimpleObjectProperty<Status>(Status.INIT);
 	}
@@ -348,8 +343,6 @@ public abstract class Exchange {
 		availablePairs = new TreeSet<String>();
 		cachedOHLC = new HashMap<String, List<Pair<Integer, ObservableList<PairData>>>>();
 		cachedCurrent = new HashMap<String, SimpleDoubleProperty>();
-		futureCurrentData = new HashMap<String, ScheduledFuture<?>>();
-		futureOHLC = new HashSet<Pair<Integer, String>>();
 	}
 
 	public final String getName() {
@@ -397,28 +390,16 @@ public abstract class Exchange {
 	public final ObservableList<PairData> getOHLCData(String pair, int interval) {
 
 		if (getAvailablePairs().contains(pair)) {
-			ObservableList<PairData> result = getFromOHLCCache(pair, interval);
-			if (result.isEmpty()) {
-
-				synchronized (futureOHLC) {
-					Pair<Integer, String> p = new Pair<Integer, String>(interval, pair);
-
-					if (futureOHLC.contains(p) == false) {
-						Main.getInstance().threadExc.execute(() -> {
-							updateOLHC(pair, interval);
-						});
-
-						futureOHLC.add(p);
-					}
-				}
-			}
-			return result;
+			return getFromOHLCCache(pair, interval);
 		}
 		return FXCollections.observableArrayList();
 	}
 
 	public final ObservableList<PairData> getOHLCData(String from, String to, int interval) {
 		String pair = getPairName(from, to);
+		if (pair == null)
+			return FXCollections.observableArrayList();
+
 		return getOHLCData(pair, interval);
 	}
 
@@ -463,26 +444,18 @@ public abstract class Exchange {
 					FXCollections.observableArrayList());
 			currentPairRecord.add(newData);
 
+			Main.getInstance().threadExc.execute(() -> {
+				updateOLHC(pair, interval);
+			});
+
 			return newData.getValue();
 		}
 	}
 
-	public final SimpleDoubleProperty getCurrentData(String symbol) {
+	private final SimpleDoubleProperty getCurrentData(final String symbol) {
+
 		if (getAvailablePairs().contains(symbol)) {
-			SimpleDoubleProperty result = getFromCurrentCache(symbol);
-			if (result.get() == Utils.LOADING_VALUE) {
-
-				synchronized (futureCurrentData) {
-					if (futureCurrentData.containsKey(symbol) == false) {
-						ScheduledFuture<?> future = Main.getInstance().threadExc.scheduleWithFixedDelay(() -> {
-							updateCurrent(symbol);
-						}, 0, 10, TimeUnit.SECONDS);
-
-						futureCurrentData.put(symbol, future);
-					}
-				}
-			}
-			return result;
+			return getFromCurrentCache(symbol);
 		}
 		return new SimpleDoubleProperty(Utils.LOADING_VALUE);
 	}
@@ -504,12 +477,36 @@ public abstract class Exchange {
 			} else {
 				SimpleDoubleProperty p = new SimpleDoubleProperty(Utils.LOADING_VALUE);
 				cachedCurrent.put(pair, p);
+
+				// Schedule an update every 10 seconds
+				Main.getInstance().threadExc.scheduleWithFixedDelay(() -> {
+					updateCurrent(pair);
+				}, 0, 10, TimeUnit.SECONDS);
 				return p;
 			}
 		}
 	}
 
-	public final Collection<RequestPath> getPath(final String from, final String to) {
+	public ObservableNumberValue getValue(final String from, final String to) {
+
+		ObservableNumberValue result = null;
+
+		List<RequestPath> path = getPath(from, to);
+
+		for (RequestPath p : path) {
+			SimpleDoubleProperty sdp = p.exchange.getCurrentData(p.symbol);
+			if (result == null) {
+				result = p.invert ? sdp.divide(sdp.multiply(sdp)) : sdp;
+			} else {
+				result = Bindings.multiply(result, p.invert ? sdp.divide(sdp.multiply(sdp)) : sdp);
+			}
+		}
+
+		// TODO Implement global search if result is NULL
+		return (result != null) ? result : new SimpleDoubleProperty(Utils.LOADING_VALUE);
+	}
+
+	private final List<RequestPath> getPath(final String from, final String to) {
 		// Local search
 		Collection<Edge> pathFromGraph = coinGraph.getPath(from, to);
 

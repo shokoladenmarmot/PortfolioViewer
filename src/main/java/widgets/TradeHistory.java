@@ -11,11 +11,12 @@ import core.TradeLibrary;
 import core.Utils;
 import exchanges.Exchange;
 import exchanges.ExchangeProvider;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableNumberValue;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
@@ -216,32 +217,6 @@ public class TradeHistory extends VBox {
 		TableColumn<Order, Number> current = new TableColumn<>("Current Price");
 		current.setCellValueFactory(new Callback<CellDataFeatures<Order, Number>, ObservableValue<Number>>() {
 
-			private final void init(Order order, Exchange e, SimpleDoubleProperty val) {
-				SimpleDoubleProperty d = e.getCurrentData(order.getSymbol());
-
-				if (d.getValue().doubleValue() != Utils.LOADING_VALUE)
-					evaluate(order, d.getValue(), val);
-
-				d.addListener(new ChangeListener<Number>() {
-
-					@Override
-					public void changed(ObservableValue<? extends Number> observable, Number oldValue,
-							Number newValue) {
-						evaluate(order, newValue, val);
-					}
-				});
-			}
-
-			private void evaluate(Order order, Number d, SimpleDoubleProperty val) {
-				Exchange e = ExchangeProvider.getMarket(order.getMarket());
-
-				if (e.isBase(order.getSymbol(), tableOwner)) {
-					val.set(d.doubleValue());
-				} else {
-					val.set(1.0 / d.doubleValue());
-				}
-			}
-
 			public ObservableValue<Number> call(CellDataFeatures<Order, Number> data) {
 				SimpleDoubleProperty val = new SimpleDoubleProperty(Utils.LOADING_VALUE);
 
@@ -251,7 +226,12 @@ public class TradeHistory extends VBox {
 
 						@Override
 						public Void call() throws Exception {
-							init(data.getValue(), e, val);
+							Order o = data.getValue();
+							if (tableOwner.equals(o.getTo())) {
+								val.bind(e.getValue(o.getFrom(), o.getTo()));
+							} else {
+								val.bind(e.getValue(o.getTo(), o.getFrom()));
+							}
 							return null;
 						}
 					});
@@ -265,39 +245,6 @@ public class TradeHistory extends VBox {
 		TableColumn<Order, Number> current_compared = new TableColumn<>("Difference");
 		current_compared.setCellValueFactory(new Callback<CellDataFeatures<Order, Number>, ObservableValue<Number>>() {
 
-			private final void init(Order order, Exchange e, SimpleDoubleProperty val) {
-				ObservableValue<Number> n = e.getCurrentData(order.getSymbol());
-
-				if (n.getValue().doubleValue() != Utils.LOADING_VALUE)
-					evaluate(order, n.getValue(), val);
-
-				n.addListener(new ChangeListener<Number>() {
-
-					@Override
-					public void changed(ObservableValue<? extends Number> observable, Number oldValue,
-							Number newValue) {
-						evaluate(order, newValue, val);
-					}
-				});
-			}
-
-			private final void evaluate(Order order, Number d, SimpleDoubleProperty val) {
-				Exchange e = ExchangeProvider.getMarket(order.getMarket());
-
-				double res = 1;
-				if (e.isBase(order.getSymbol(), tableOwner)) {
-					res *= d.doubleValue();
-				} else {
-					res /= d.doubleValue();
-				}
-
-				if (order.getFrom().equals(tableOwner)) {
-					val.set(order.getPrice(true) / res);
-				} else {
-					val.set(res / order.getPrice(false));
-				}
-			};
-
 			public ObservableValue<Number> call(CellDataFeatures<Order, Number> data) {
 				SimpleDoubleProperty val = new SimpleDoubleProperty(Utils.LOADING_VALUE);
 				Exchange e = ExchangeProvider.getMarket(data.getValue().getMarket());
@@ -307,7 +254,18 @@ public class TradeHistory extends VBox {
 
 						@Override
 						public Void call() throws Exception {
-							init(data.getValue(), e, val);
+							Order o = data.getValue();
+							ObservableNumberValue exchangeValue = null;
+
+							if (tableOwner.equals(o.getTo())) {
+								exchangeValue = e.getValue(o.getFrom(), o.getTo());
+								exchangeValue = Bindings.divide(exchangeValue, o.getPrice(false));
+							} else {
+								exchangeValue = e.getValue(o.getTo(), o.getFrom());
+								exchangeValue = Bindings.divide(o.getPrice(true), exchangeValue);
+							}
+
+							val.bind(exchangeValue);
 							return null;
 						}
 					});

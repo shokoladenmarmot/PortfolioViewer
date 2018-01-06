@@ -13,13 +13,11 @@ import core.TradeLibrary;
 import core.Utils;
 import exchanges.Exchange;
 import exchanges.ExchangeProvider;
-import javafx.beans.InvalidationListener;
-import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
-import javafx.beans.binding.NumberBinding;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableNumberValue;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -79,106 +77,51 @@ public class Assets extends VBox {
 			marketETH = new SimpleStringProperty();
 
 			marketUSD.addListener(new ChangeListener<String>() {
-				private NumberBinding nb = null;
-				private InvalidationListener listener = null;
 
 				@Override
 				public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-					if (nb != null) {
-						nb.removeListener(listener);
-					}
+
 					String asUSD = getMarketUSD();
 					if ((asUSD != null) && (asUSD.isEmpty() == false)) {
 
 						Exchange e = ExchangeProvider.getMarket(asUSD);
-						String pair = e.getPairName(name, "USD");
-						SimpleDoubleProperty pairValue = e.getCurrentData(pair);
-						nb = Bindings.multiply(
-								e.isBase(pair, "USD") ? pairValue.divide(pairValue.multiply(pairValue)) : pairValue,
-								getAmountProperty());
-						if (pairValue.get() != Utils.LOADING_VALUE) {
-							setAsUSD(nb.getValue().doubleValue());
-						} else {
-							setAsUSD(Utils.LOADING_VALUE);
-						}
-						listener = new InvalidationListener() {
-
-							@Override
-							public void invalidated(Observable observable) {
-								setAsUSD(nb.getValue().doubleValue());
-							}
-						};
-						nb.addListener(listener);
+						ObservableNumberValue pairValue = e.getValue("USD", name);
+						pairValue = Bindings.multiply(pairValue, getAmountProperty());
+						getAsUSDProperty().unbind();
+						getAsUSDProperty().bind(pairValue);
 					}
 				}
 			});
 
 			marketBTC.addListener(new ChangeListener<String>() {
-				private NumberBinding nb = null;
-				private InvalidationListener listener = null;
 
 				@Override
 				public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-					if (nb != null) {
-						nb.removeListener(listener);
-					}
 					String asBTC = getMarketBTC();
 					if ((asBTC != null) && (asBTC.isEmpty() == false)) {
 
 						Exchange e = ExchangeProvider.getMarket(asBTC);
-						String pair = e.getPairName(name, "BTC");
-						SimpleDoubleProperty pairValue = e.getCurrentData(pair);
-						nb = Bindings.multiply(
-								e.isBase(pair, "BTC") ? pairValue.divide(pairValue.multiply(pairValue)) : pairValue,
-								getAmountProperty());
-						if (pairValue.get() != Utils.LOADING_VALUE) {
-							setAsBTC(nb.getValue().doubleValue());
-						} else {
-							setAsBTC(Utils.LOADING_VALUE);
-						}
-						listener = new InvalidationListener() {
-
-							@Override
-							public void invalidated(Observable observable) {
-								setAsBTC(nb.getValue().doubleValue());
-							}
-						};
-						nb.addListener(listener);
+						ObservableNumberValue pairValue = e.getValue("BTC", name);
+						pairValue = Bindings.multiply(pairValue, getAmountProperty());
+						getAsBTCProperty().unbind();
+						getAsBTCProperty().bind(pairValue);
 					}
 				}
 			});
 
 			marketETH.addListener(new ChangeListener<String>() {
-				private NumberBinding nb = null;
-				private InvalidationListener listener = null;
 
 				@Override
 				public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-					if (nb != null) {
-						nb.removeListener(listener);
-					}
+
 					String asETH = getMarketETH();
 					if ((asETH != null) && (asETH.isEmpty() == false)) {
 
 						Exchange e = ExchangeProvider.getMarket(asETH);
-						String pair = e.getPairName(name, "ETH");
-						SimpleDoubleProperty pairValue = e.getCurrentData(pair);
-						nb = Bindings.multiply(
-								e.isBase(pair, "ETH") ? pairValue.divide(pairValue.multiply(pairValue)) : pairValue,
-								getAmountProperty());
-						if (pairValue.get() != Utils.LOADING_VALUE) {
-							setAsETH(nb.getValue().doubleValue());
-						} else {
-							setAsETH(Utils.LOADING_VALUE);
-						}
-						listener = new InvalidationListener() {
-
-							@Override
-							public void invalidated(Observable observable) {
-								setAsETH(nb.getValue().doubleValue());
-							}
-						};
-						nb.addListener(listener);
+						ObservableNumberValue pairValue = e.getValue("ETH", name);
+						pairValue = Bindings.multiply(pairValue, getAmountProperty());
+						getAsETHProperty().unbind();
+						getAsETHProperty().bind(pairValue);
 					}
 				}
 			});
@@ -192,18 +135,18 @@ public class Assets extends VBox {
 
 						@Override
 						public Void call() throws Exception {
-							if (marketUSD.get() == null) {
-								if (e.getPairName(name, "USD") != null) {
+							if ((currencyName.equals("USD") == false) && marketUSD.get() == null) {
+								if (e.getAvailableCurrency().contains("USD")) {
 									marketUSD.setValue(e.getName());
 								}
 							}
-							if (marketBTC.get() == null) {
-								if (e.getPairName(name, "BTC") != null) {
+							if ((currencyName.equals("BTC") == false) && marketBTC.get() == null) {
+								if (e.getAvailableCurrency().contains("BTC")) {
 									marketBTC.setValue(e.getName());
 								}
 							}
-							if (marketETH.get() == null) {
-								if (e.getPairName(name, "ETH") != null) {
+							if ((currencyName.equals("ETH") == false) && marketETH.get() == null) {
+								if (e.getAvailableCurrency().contains("ETH")) {
 									marketETH.setValue(e.getName());
 								}
 							}
@@ -463,7 +406,7 @@ public class Assets extends VBox {
 		for (Entry<String, Double> entr : values.entrySet()) {
 
 			// Don't add currencies which balance is currently 0
-			/* if (entr.getValue() >= 0) */ {
+			/*if (entr.getValue() >= 0)*/ {
 
 				boolean exists = false;
 				for (Currency asCurrency : assets) {
