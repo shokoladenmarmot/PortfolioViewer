@@ -124,7 +124,6 @@ public abstract class Exchange {
 						edgeListPerCoinMap.put(cn.name, edgeList);
 					}
 					edgeList.addAll(cn.edges);
-
 				}
 
 				return false;
@@ -160,6 +159,8 @@ public abstract class Exchange {
 			} else {
 
 				Set<Edge> allEdges = new HashSet<Edge>();
+
+				// Push personal set fist
 				allEdges.addAll(current.edges);
 				allEdges.addAll(edgeListPerCoinMap.get(current.name));
 
@@ -173,8 +174,8 @@ public abstract class Exchange {
 
 					for (Edge e : allEdges) {
 
-						// Avoid looping
-						if (result.contains(e) == false) {
+						// Avoid inner loops
+						if (result.stream().anyMatch(a -> a.contains(e.getOtherEnd(current).name)) == false) {
 							result.push(e);
 
 							if (getPathTo(e.getOtherEnd(current), to, result)) {
@@ -620,10 +621,8 @@ public abstract class Exchange {
 		List<RequestPath> path = coinGraph.getPath(from, to);
 
 		if (path.isEmpty() && coinGraph.coinMap.containsKey(from)) {
-			// TODO: Global search
-//			long start = System.nanoTime();
-//			path = ExchangeGraph.getInstance().getPath(coinGraph.coinMap.get(from), to);
-//			System.out.println("Time: " + ((System.nanoTime() - start) / 1000));
+			// Global search
+			path = ExchangeGraph.getInstance().getPath(coinGraph.coinMap.get(from), to);
 		}
 
 		for (RequestPath p : path) {

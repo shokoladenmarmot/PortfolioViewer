@@ -406,7 +406,7 @@ public class Assets extends VBox {
 		for (Entry<String, Double> entr : values.entrySet()) {
 
 			// Don't add currencies which balance is currently 0
-			/* if (entr.getValue() >= 0) */ {
+			if (entr.getValue() >= 0) {
 
 				boolean exists = false;
 				for (Currency asCurrency : assets) {

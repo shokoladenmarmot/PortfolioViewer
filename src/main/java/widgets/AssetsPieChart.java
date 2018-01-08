@@ -34,16 +34,20 @@ public class AssetsPieChart extends PieChart {
 
 	public void add(Currency c) {
 
-		Data newData = new Data(c.getCurrencyName(), 0);
+		Data newData = new Data(c.getCurrencyName(), Utils.isLoading(c.getAsUSD()) ? 0 : c.getAsUSD());
+
 		c.getAsUSDProperty().addListener(new ChangeListener<Number>() {
 
 			@Override
 			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
 				Platform.runLater(() -> {
 
-					newData.setPieValue(newValue.doubleValue());
-					newData.setName(
-							c.getCurrencyName() + " - " + Utils.decimalTwoSymbols.format(newValue.doubleValue()) + "$");
+					// Note: The chart seems to break when an Infinity is used as a value
+					if (Utils.isLoading(c.getAsUSD()) == false) {
+						newData.setPieValue(newValue.doubleValue());
+						newData.setName(c.getCurrencyName() + " - "
+								+ Utils.decimalTwoSymbols.format(newValue.doubleValue()) + "$");
+					}
 
 				});
 			}

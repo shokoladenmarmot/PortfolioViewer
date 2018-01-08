@@ -8,6 +8,8 @@ public class Utils {
 	public static final Double LOADING_VALUE_P = Double.POSITIVE_INFINITY;
 	public static final Double LOADING_VALUE_NAN = Double.NaN;
 
+	public static final Double INVALID_VALUE = new Double(1234567890);
+
 	public static final DecimalFormat decimalEightSymbols = new DecimalFormat("0.00000000");
 	public static final DecimalFormat decimalFiveSymbols = new DecimalFormat("0.00000");
 	public static final DecimalFormat decimalTwoSymbols = new DecimalFormat("0.00");
