@@ -52,9 +52,10 @@ public class Binance extends Exchange {
 					coinGraph.addCoin(base);
 					coinGraph.addCoin(quote);
 
-					coinGraph.addEdge(base, quote, symbol);
+					coinGraph.addEdge(base, quote, symbol, this);
 				}
 
+				ExchangeGraph.getInstance().addExchange(this);
 				setStatus(Status.READY);
 				LOGGER.info("Finish: Populate list of pairs");
 			}

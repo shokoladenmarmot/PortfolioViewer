@@ -9,6 +9,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import core.JSONFactory;
+import exchanges.Exchange.ExchangeGraph;
 
 public class Poloniex extends Exchange {
 
@@ -47,9 +48,10 @@ public class Poloniex extends Exchange {
 					coinGraph.addCoin(base);
 					coinGraph.addCoin(quote);
 
-					coinGraph.addEdge(base, quote, pair);
+					coinGraph.addEdge(base, quote, pair, this);
 				}
 
+				ExchangeGraph.getInstance().addExchange(this);
 				setStatus(Status.READY);
 				LOGGER.info("Finish: Populate list of pairs");
 			}

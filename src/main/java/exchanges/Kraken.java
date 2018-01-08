@@ -12,6 +12,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import core.JSONFactory;
+import exchanges.Exchange.ExchangeGraph;
 
 public class Kraken extends Exchange {
 
@@ -72,8 +73,10 @@ public class Kraken extends Exchange {
 					String base = symbolAltname
 							.get(result.getJSONObject("result").getJSONObject(pair).getString("base"));
 
-					coinGraph.addEdge(quote, base, pair);
+					coinGraph.addEdge(quote, base, pair, this);
 				}
+				
+				ExchangeGraph.getInstance().addExchange(this);
 				setStatus(Status.READY);
 				LOGGER.info("Finish: Populate list of pairs");
 			}

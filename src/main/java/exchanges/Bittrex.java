@@ -10,6 +10,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import core.JSONFactory;
+import exchanges.Exchange.ExchangeGraph;
 
 public class Bittrex extends Exchange {
 
@@ -77,9 +78,10 @@ public class Bittrex extends Exchange {
 					String base = pair.getString("BaseCurrency");
 					String quote = pair.getString("MarketCurrency");
 
-					coinGraph.addEdge(base, quote, symbolName);
+					coinGraph.addEdge(base, quote, symbolName, this);
 				}
 
+				ExchangeGraph.getInstance().addExchange(this);
 				setStatus(Status.READY);
 				LOGGER.info("Finish: Populate list of pairs");
 			}

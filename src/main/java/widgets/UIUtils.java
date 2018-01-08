@@ -124,7 +124,7 @@ public class UIUtils {
 							for (ExchangeProvider ep : ExchangeProvider.values()) {
 								Exchange e = ep.getInstance();
 								if (e.getStatus() == Status.READY) {
-									if (e.getAvailableCurrency().contains(current.getCurrencyName())) {
+									if (e.getAvailableCurrency().contains(currencySymbol)) {
 										newValues.add(e.getName());
 									}
 								}
