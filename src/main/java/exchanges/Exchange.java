@@ -143,7 +143,6 @@ public abstract class Exchange {
 
 				// Convert nodes to edges ( as minimum market flips as possible )
 				Stack<Edge> resultStack = new Stack<Edge>();
-
 				Iterator<CoinNode> itr = resultCoinStack.iterator();
 
 				CoinNode last = itr.next();
@@ -193,7 +192,7 @@ public abstract class Exchange {
 			allEdges.addAll(current.edges);
 			allEdges.addAll(edgeListPerCoinMap.get(current.name));
 
-			Optional<Edge> myEdge = allEdges.parallelStream().filter(a -> a.contains(to)).findFirst();
+			Optional<Edge> myEdge = allEdges.stream().filter(a -> a.contains(to)).findFirst();
 
 			if (myEdge.isPresent()) {
 				result.push(myEdge.get().getOtherEnd(current.name));
@@ -261,7 +260,7 @@ public abstract class Exchange {
 				allEdges.addAll(current.edges);
 				allEdges.addAll(edgeListPerCoinMap.get(current.name));
 
-				Optional<Edge> myEdge = allEdges.parallelStream().filter(a -> a.contains(to)).findFirst();
+				Optional<Edge> myEdge = allEdges.stream().filter(a -> a.contains(to)).findFirst();
 
 				if (myEdge.isPresent()) {
 					result.push(myEdge.get());
@@ -731,10 +730,8 @@ public abstract class Exchange {
 
 		if (path.isEmpty() && coinGraph.coinMap.containsKey(from)) {
 			// Global search
-			// long start = System.nanoTime();
+			// NOTE: V1 ( search through edges ) seems to be significantly faster.
 			path = ExchangeGraph.getInstance().getPathV1(coinGraph.coinMap.get(from), to);
-			// System.out.println("TIME " + from + to + " : " + ((System.nanoTime() - start)
-			// / 1000000));
 		}
 
 		for (RequestPath p : path) {
