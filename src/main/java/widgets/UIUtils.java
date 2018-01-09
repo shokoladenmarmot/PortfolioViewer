@@ -27,6 +27,12 @@ public class UIUtils {
 			public TableCell<T, Number> call(TableColumn<T, Number> param) {
 				return new TableCell<T, Number>() {
 					private final ProgressIndicator pi = new ProgressIndicator();
+					{
+						pi.setOnMouseClicked(e -> {
+							getTableView().getSelectionModel().select(getTableRow().getIndex());
+							getTableView().requestFocus();
+						});
+					}
 
 					@Override
 					protected void updateItem(final Number item, boolean empty) {
@@ -62,6 +68,12 @@ public class UIUtils {
 			public TableCell<T, Number> call(TableColumn<T, Number> param) {
 				return new TableCell<T, Number>() {
 					private final ProgressIndicator pi = new ProgressIndicator();
+					{
+						pi.setOnMouseClicked(e -> {
+							getTableView().getSelectionModel().select(getTableRow().getIndex());
+							getTableView().requestFocus();
+						});
+					}
 
 					@Override
 					protected void updateItem(final Number item, boolean empty) {

@@ -91,12 +91,12 @@ public abstract class Exchange {
 		// TODO: hashCode
 	}
 
-	public static class ExchangeGraph {
+	protected static class ExchangeGraph {
 		private static ExchangeGraph instance;
 
 		private Map<String, List<Edge>> edgeListPerCoinMap;
 
-		public static ExchangeGraph getInstance() {
+		protected static ExchangeGraph getInstance() {
 			if (instance == null) {
 				synchronized (ExchangeGraph.class) {
 					if (instance == null) {
@@ -111,7 +111,7 @@ public abstract class Exchange {
 			edgeListPerCoinMap = new HashMap<String, List<Edge>>();
 		}
 
-		public boolean addExchange(Exchange e) {
+		protected boolean addExchange(Exchange e) {
 
 			synchronized (ExchangeGraph.class) {
 
@@ -129,7 +129,7 @@ public abstract class Exchange {
 			}
 		}
 
-		public final List<RequestPath> getPath(final CoinNode from, final String to) {
+		private final List<RequestPath> getPath(final CoinNode from, final String to) {
 			synchronized (ExchangeGraph.class) {
 
 				if ((edgeListPerCoinMap.containsKey(to) == false) || from.name.equals(to))
@@ -226,7 +226,7 @@ public abstract class Exchange {
 			}
 		}
 
-		public final List<RequestPath> getPathV1(final CoinNode from, final String to) {
+		private final List<RequestPath> getPathV1(final CoinNode from, final String to) {
 			synchronized (ExchangeGraph.class) {
 
 				if ((edgeListPerCoinMap.containsKey(to) == false) || from.name.equals(to))
