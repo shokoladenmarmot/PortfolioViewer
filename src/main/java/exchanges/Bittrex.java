@@ -7,10 +7,10 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import core.JSONFactory;
-import exchanges.Exchange.ExchangeGraph;
 
 public class Bittrex extends Exchange {
 
@@ -110,7 +110,7 @@ public class Bittrex extends Exchange {
 	}
 
 	@Override
-	protected void updateOLHC(String pair, int interval) {
+	protected boolean updateOLHC(String pair, int interval) {
 
 		LOGGER.info("Update " + pair + ":" + interval);
 
@@ -119,26 +119,34 @@ public class Bittrex extends Exchange {
 				url + "market/GetTicks?marketName=" + pair + "&tickInterval=" + getIntervalFromInt(interval));
 
 		if (result == null)
-			return;
+			return false;
 
 		JSONArray asArray = result.getJSONArray("result");
 		if (asArray == null)
-			return;
+			return false;
 
 		if (asArray.length() > 0) {
 			List<PairData> dataList = new LinkedList<PairData>();
 
 			for (int i = 0; i < asArray.length(); ++i) {
-				JSONObject content = asArray.getJSONObject(i);
+				try {
+					JSONObject content = asArray.getJSONObject(i);
 
-				String time = content.getString("T") + ".00Z";
-				Double val = content.getDouble("C");
-				Date date = Date.from(Instant.parse(time));
+					String time = content.getString("T") + ".00Z";
+					Double val = content.getDouble("C");
+					Date date = Date.from(Instant.parse(time));
 
-				dataList.add(new PairData(date, val));
+					dataList.add(new PairData(date, val));
+				} catch (JSONException e) {
+					e.printStackTrace();
+					LOGGER.info(e.getMessage());
+					return false;
+				}
 			}
 			addToOHLCCache(pair, interval, dataList);
+			return true;
 		}
+		return false;
 	}
 
 	@Override

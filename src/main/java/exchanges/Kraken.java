@@ -9,10 +9,10 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import core.JSONFactory;
-import exchanges.Exchange.ExchangeGraph;
 
 public class Kraken extends Exchange {
 
@@ -75,7 +75,7 @@ public class Kraken extends Exchange {
 
 					coinGraph.addEdge(quote, base, pair, this);
 				}
-				
+
 				ExchangeGraph.getInstance().addExchange(this);
 				setStatus(Status.READY);
 				LOGGER.info("Finish: Populate list of pairs");
@@ -98,7 +98,7 @@ public class Kraken extends Exchange {
 	}
 
 	@Override
-	public void updateOLHC(String pair, int interval) {
+	public boolean updateOLHC(String pair, int interval) {
 
 		LOGGER.info("Update " + pair + ":" + interval);
 
@@ -106,7 +106,7 @@ public class Kraken extends Exchange {
 		JSONObject result = JSONFactory.getJSONObject(url + "OHLC?pair=" + pair + "&interval=" + interval); // &since=1501545600
 
 		if (result == null)
-			return;
+			return false;
 		// KRAKEN: array of array entries(<time>, <open>, <high>, <low>, <close>,
 		// <vwap>, <volume>, <count>)
 
@@ -116,13 +116,22 @@ public class Kraken extends Exchange {
 			List<PairData> dataList = new LinkedList<PairData>();
 
 			for (int i = 0; i < asArray.length(); ++i) {
-				JSONArray content = asArray.getJSONArray(i);
-				// Time is in seconds so we need to convert to millisec
-				dataList.add(
-						new PairData(new Date(content.getLong(0) * 1000), Double.parseDouble(content.getString(4))));
+				try {
+					JSONArray content = asArray.getJSONArray(i);
+
+					// Time is in seconds so we need to convert to millisec
+					dataList.add(new PairData(new Date(content.getLong(0) * 1000),
+							Double.parseDouble(content.getString(4))));
+				} catch (JSONException e) {
+					e.printStackTrace();
+					LOGGER.info(e.getMessage());
+					return false;
+				}
 			}
 			addToOHLCCache(pair, interval, dataList);
+			return true;
 		}
+		return false;
 	}
 
 	@Override

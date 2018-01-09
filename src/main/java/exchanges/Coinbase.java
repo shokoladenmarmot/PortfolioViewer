@@ -16,9 +16,10 @@ public class Coinbase extends Exchange {
 	}
 
 	@Override
-	public void updateOLHC(String pair, int interval) {
+	public boolean updateOLHC(String pair, int interval) {
 
 		LOGGER.info("Update " + pair + ":" + interval);
+		return true;
 
 	}
 

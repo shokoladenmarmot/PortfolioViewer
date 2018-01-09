@@ -7,52 +7,47 @@ import java.util.logging.Logger;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import core.JSONFactory;
 
-public class Binance extends Exchange {
+public class Bitfinex extends Exchange {
 
-	private static final Logger LOGGER = Logger.getLogger(Binance.class.getName());
+	private static final Logger LOGGER = Logger.getLogger(Bitfinex.class.getName());
+	private static final String urlV1 = new String("https://api.bitfinex.com/v1/");
 
 	@Override
 	protected void init() {
 		super.init();
-		exchangeName = "Binance";
+		exchangeName = "Bitfinex";
 		logo = null;
-		url = "https://api.binance.com/api/v1/";
+		url = "https://api.bitfinex.com/v2/";
 	}
 
 	@Override
 	public void initiate() {
-		// exchangeInfo
-		// exchange/public/product -
-		synchronized (Binance.class) {
+
+		synchronized (Bitfinex.class) {
 			if (getStatus() == Status.INIT) {
 				init();
 
 				LOGGER.info("Start: Populate list of pairs");
 
-				// Get all currencies
-				JSONObject result = JSONFactory.getJSONObject(url + "exchangeInfo");
+				// Get all pairs
+				JSONArray result = JSONFactory.getJSONArray(urlV1 + "symbols");
 
 				if (result == null)
 					return;
 
-				JSONArray currenciesArray = result.getJSONArray("symbols");
-				if (currenciesArray == null)
-					return;
-
-				for (int i = 0; i < currenciesArray.length(); i++) {
-					JSONObject currency = currenciesArray.getJSONObject(i);
-					String symbol = currency.getString("symbol");
-					String base = currency.getString("baseAsset");
-					String quote = currency.getString("quoteAsset");
+				for (int i = 0; i < result.length(); i++) {
+					String symbol = result.getString(i);
+					String base = symbol.substring(0, 3).toUpperCase();
+					String quote = symbol.substring(3, symbol.length()).toUpperCase();
 
 					coinGraph.addCoin(base);
 					coinGraph.addCoin(quote);
 
-					coinGraph.addEdge(base, quote, symbol, this);
+					// NOTE: This API is case sensitive. It works with UPPER CASE SYMBOLS ONLY!
+					coinGraph.addEdge(base, quote, symbol.toUpperCase(), this);
 				}
 
 				ExchangeGraph.getInstance().addExchange(this);
@@ -68,9 +63,6 @@ public class Binance extends Exchange {
 		if (i == 1) {
 			return "1m";
 		}
-		if (i == 3) {
-			return "3m";
-		}
 		if (i == 5) {
 			return "5m";
 		}
@@ -83,26 +75,23 @@ public class Binance extends Exchange {
 		if (i == 60) {
 			return "1h";
 		}
-		if (i == 120) {
-			return "2h";
-		}
-		if (i == 240) {
-			return "4h";
+		if (i == 180) {
+			return "3h";
 		}
 		if (i == 360) {
 			return "6h";
-		}
-		if (i == 480) {
-			return "8h";
 		}
 		if (i == 720) {
 			return "12h";
 		}
 		if (i == 1440) {
-			return "1d";
+			return "1D";
 		}
-		if (i == 4320) {
-			return "3d";
+		if (i == 10080) {
+			return "7D";
+		}
+		if (i == 20160) {
+			return "14D";
 		}
 		if (i == 43800) {
 			return "1M";
@@ -113,10 +102,14 @@ public class Binance extends Exchange {
 
 	@Override
 	protected boolean updateOLHC(String pair, int interval) {
-		// v1/klines - symbol = symbol (startTime/endTime)
 
-		JSONArray result = JSONFactory
-				.getJSONArray(url + "klines?symbol=" + pair + "&interval=" + getIntervalFromInt(interval));
+		// Note: The default limit is 100. Range seems to be from 1-1000. Use 500
+		// Note: Start and end time also available
+		// Note: By default it returns an array from NEW to OLD. "sort=1" will return
+		// the array OLD to NEW
+
+		JSONArray result = JSONFactory.getJSONArray(
+				url + "candles/trade:" + getIntervalFromInt(interval) + ":t" + pair + "/hist?limit=" + 500 + "&sort=1");
 
 		if (result == null)
 			return false;
@@ -125,11 +118,11 @@ public class Binance extends Exchange {
 			List<PairData> dataList = new LinkedList<PairData>();
 
 			for (int i = 0; i < result.length(); ++i) {
-				JSONArray content = result.getJSONArray(i);
-
 				try {
+					JSONArray content = result.getJSONArray(i);
+
 					long time = content.getLong(0);
-					Double val = Double.parseDouble(content.getString(4));
+					Double val = content.getDouble(2);
 
 					dataList.add(new PairData(new Date(time), val));
 				} catch (JSONException e) {
@@ -146,21 +139,22 @@ public class Binance extends Exchange {
 
 	@Override
 	protected void updateCurrent(String symbol) {
-		// NOTE: So far there hasnt been any problems with this but maybe I should use
-		// API "v3" instead "v1"
 
-		JSONObject result = JSONFactory.getJSONObject(url + "ticker/price?symbol=" + symbol);
+		JSONArray result = JSONFactory.getJSONArray(url + "ticker/t" + symbol);
 		if (result == null)
 			return;
 
-		double last = Double.parseDouble(result.getString("price"));
+		if (result.length() > 6) {
+			double last = result.getDouble(6);
 
-		addToCurrentCache(symbol, last);
+			addToCurrentCache(symbol, last);
+		} else {
+			LOGGER.info("Invalid: Request: " + url + "ticker/t" + symbol);
+		}
 	}
 
 	@Override
 	public boolean isBase(String symbol, String from) {
 		return symbol.startsWith(from);
 	}
-
 }

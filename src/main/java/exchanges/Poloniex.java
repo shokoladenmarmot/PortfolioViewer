@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import core.JSONFactory;
-import exchanges.Exchange.ExchangeGraph;
 
 public class Poloniex extends Exchange {
 
@@ -63,29 +63,37 @@ public class Poloniex extends Exchange {
 	}
 
 	@Override
-	protected void updateOLHC(String pair, int interval) {
+	protected boolean updateOLHC(String pair, int interval) {
 		// https://poloniex.com/public?command=returnChartData&currencyPair=BTC_XMR&start=1405699200&end=9999999999&period=14400
 
 		JSONArray result = JSONFactory.getJSONArray(
 				url + "returnChartData&currencyPair=" + pair + "&period=" + getIntervalFromInt(interval) + "&start=0");
 
 		if (result == null)
-			return;
+			return false;
 
 		if (result.length() > 0) {
 			List<PairData> dataList = new LinkedList<PairData>();
 
 			for (int i = 0; i < result.length(); ++i) {
-				JSONObject content = result.getJSONObject(i);
+				try {
+					JSONObject content = result.getJSONObject(i);
 
-				long time = content.getLong("date");
-				Double val = content.getDouble("close");
+					long time = content.getLong("date");
+					Double val = content.getDouble("close");
 
-				// Time is in seconds so we need to convert to millisec
-				dataList.add(new PairData(new Date(time * 1000), val));
+					// Time is in seconds so we need to convert to millisec
+					dataList.add(new PairData(new Date(time * 1000), val));
+				} catch (JSONException e) {
+					e.printStackTrace();
+					LOGGER.info(e.getMessage());
+					return false;
+				}
 			}
 			addToOHLCCache(pair, interval, dataList);
+			return true;
 		}
+		return false;
 
 	}
 

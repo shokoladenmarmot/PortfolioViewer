@@ -3,6 +3,8 @@ package controllers;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
@@ -163,7 +165,6 @@ public class ChartController implements Initializable {
 	}
 
 	private void updateChart() {
-
 		String pairName = symbolCmb.getValue();
 
 		if ((pairName == null) || pairName.trim().isEmpty())
@@ -176,11 +177,12 @@ public class ChartController implements Initializable {
 			@Override
 			public Void call() throws Exception {
 				Platform.runLater(() -> {
-					series1.getData().clear();
+					List<Data<String,Double>> templ = new ArrayList<Data<String,Double>>();
+					
 					dataList.forEach(pd -> {
-						series1.getData()
-								.add(new Data<String, Double>(chartFormatter.format(pd.getDate()), pd.getValue()));
+						templ.add(new Data<String, Double>(chartFormatter.format(pd.getDate()), pd.getValue()));
 					});
+					series1.getData().setAll(templ);
 				});
 				return null;
 			}

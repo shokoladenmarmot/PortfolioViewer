@@ -61,6 +61,11 @@ public abstract class Exchange {
 		public Double getValue() {
 			return value;
 		}
+
+		@Override
+		public String toString() {
+			return date.toString() + "  " + value;
+		}
 	}
 
 	public static class RequestPath {
@@ -129,6 +134,7 @@ public abstract class Exchange {
 			}
 		}
 
+		@SuppressWarnings("unused")
 		private final List<RequestPath> getPath(final CoinNode from, final String to) {
 			synchronized (ExchangeGraph.class) {
 
@@ -679,7 +685,14 @@ public abstract class Exchange {
 			currentPairRecord.add(newData);
 
 			Main.getInstance().threadExc.execute(() -> {
-				updateOLHC(pair, interval);
+				while (updateOLHC(pair, interval) == false) {
+					try {
+						Thread.sleep(5000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+						LOGGER.info(e.getMessage());
+					}
+				}
 			});
 
 			return newData.getValue();
@@ -796,7 +809,7 @@ public abstract class Exchange {
 
 	abstract public void initiate();
 
-	abstract protected void updateOLHC(String pair, int interval);
+	abstract protected boolean updateOLHC(String pair, int interval);
 
 	abstract protected void updateCurrent(String symbol);
 
