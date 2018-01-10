@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
@@ -20,6 +21,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
@@ -31,6 +33,9 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.DateCell;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.RadioButton;
+import javafx.scene.control.Tooltip;
+import javafx.scene.effect.Glow;
+import javafx.scene.transform.Scale;
 import javafx.util.Callback;
 
 public class ChartController implements Initializable {
@@ -80,6 +85,7 @@ public class ChartController implements Initializable {
 	private Duration duration;
 	private Exchange exchange;
 	private Series<String, Double> series1;
+	private Tooltip tp;
 
 	private boolean init = false;
 	private final SimpleDateFormat chartFormatter = new SimpleDateFormat("dd/MM/yy");
@@ -93,13 +99,36 @@ public class ChartController implements Initializable {
 	}
 
 	private void init() {
+		tp = new Tooltip();
+
 		yAxis.setAnimated(false);
 		xAxis.setAnimated(false);
 		series1 = new XYChart.Series<String, Double>();
 		btcchart.getData().add(series1);
 
-		btcchart.setCreateSymbols(false);
+		btcchart.setCreateSymbols(true);
 		btcchart.setLegendVisible(false);
+
+		btcchart.lookup(".chart-plot-background").setOnMouseMoved(e -> {
+			String x = xAxis.getValueForDisplay(e.getX());
+			Number y = yAxis.getValueForDisplay(e.getY());
+
+			if (x != null) {
+				tp.setText("Date: " + x + "\nPrice: " + y);
+			}
+		});
+		Scale sc = new Scale();
+		btcchart.lookup(".chart-plot-background").setOnScroll(e -> {
+			double amount = sc.getX();
+			if (e.getDeltaY() > 0) {
+				amount += 0.1;
+			} else {
+				amount -= 0.1;
+			}
+			sc.setX(amount);
+		});
+
+		btcchart.getTransforms().add(sc);
 
 		startDate.setValue(LocalDate.now());
 		endDate.setValue(LocalDate.now());
@@ -177,12 +206,23 @@ public class ChartController implements Initializable {
 			@Override
 			public Void call() throws Exception {
 				Platform.runLater(() -> {
-					List<Data<String,Double>> templ = new ArrayList<Data<String,Double>>();
-					
+					List<Data<String, Double>> templ = new ArrayList<Data<String, Double>>();
+
 					dataList.forEach(pd -> {
 						templ.add(new Data<String, Double>(chartFormatter.format(pd.getDate()), pd.getValue()));
 					});
 					series1.getData().setAll(templ);
+
+					Set<Node> nList = btcchart.lookupAll(".chart-line-symbol");
+					for (Node n : nList) {
+						n.setOnMouseEntered(e -> {
+							n.setEffect(new Glow());
+						});
+						n.setOnMouseExited(e -> {
+							n.setEffect(null);
+						});
+						Tooltip.install(n, tp);
+					}
 				});
 				return null;
 			}

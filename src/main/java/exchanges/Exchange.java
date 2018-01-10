@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -134,63 +133,34 @@ public abstract class Exchange {
 			}
 		}
 
-		@SuppressWarnings("unused")
 		private final List<RequestPath> getPath(final CoinNode from, final String to) {
-			synchronized (ExchangeGraph.class) {
 
-				if ((edgeListPerCoinMap.containsKey(to) == false) || from.name.equals(to))
-					return Collections.emptyList();
+			if ((edgeListPerCoinMap.containsKey(to) == false) || from.name.equals(to))
+				return Collections.emptyList();
 
-				// Get the path in nodes
-				Stack<CoinNode> resultCoinStack = new Stack<CoinNode>();
+			Stack<Edge> resultStack = new Stack<Edge>();
 
-				if (getPathTo(from, to, resultCoinStack) == false)
-					return Collections.emptyList();
+			getPathTo(from, to, new Stack<Edge>(), resultStack);
 
-				// Convert nodes to edges ( as minimum market flips as possible )
-				Stack<Edge> resultStack = new Stack<Edge>();
-				Iterator<CoinNode> itr = resultCoinStack.iterator();
+			if (resultStack.isEmpty())
+				return Collections.emptyList();
 
-				CoinNode last = itr.next();
-				while (itr.hasNext()) {
-					CoinNode first = last;
-					CoinNode second = itr.next();
+			List<RequestPath> result = new ArrayList<RequestPath>();
 
-					Exchange exch = first.edges.stream().findFirst().get().exchange;
-
-					Edge edge = exch.coinGraph.getEdge(first.name, second.name);
-					if (edge != null) {
-						resultStack.push(edge);
-					} else {
-						exch = second.edges.stream().findFirst().get().exchange;
-						edge = exch.coinGraph.getEdge(first.name, second.name);
-
-						if (edge != null) {
-							resultStack.push(edge);
-						} else {
-							// Go through the rest of the exchanges and find a pair
-							resultStack.push(
-									edgeListPerCoinMap.values().stream().flatMap(Collection::stream).findFirst().get());
-						}
-					}
-					last = second;
-				}
-
-				String currentCurrency = from.name;
-				List<RequestPath> result = new ArrayList<RequestPath>();
-
-				for (Edge e : resultStack) {
-					result.add(new RequestPath(e, e.exchange.isBase(e.symbol, currentCurrency)));
-					currentCurrency = currentCurrency.equals(e.from.name) ? e.to.name : e.from.name;
-				}
-
-				return result;
+			String currentCurrency = from.name;
+			for (Edge e : resultStack) {
+				result.add(new RequestPath(e, e.exchange.isBase(e.symbol, currentCurrency)));
+				currentCurrency = currentCurrency.equals(e.from.name) ? e.to.name : e.from.name;
 			}
+
+			return result;
 		}
 
-		private final boolean getPathTo(final CoinNode current, final String to, Stack<CoinNode> result) {
+		private final void getPathTo(final CoinNode current, final String to, Stack<Edge> result,
+				Stack<Edge> bestSoFar) {
 
-			result.push(current);
+			if ((bestSoFar.isEmpty() == false) && ((result.size() + 1) >= bestSoFar.size()))
+				return;
 
 			Set<Edge> allEdges = new HashSet<Edge>();
 
@@ -201,102 +171,21 @@ public abstract class Exchange {
 			Optional<Edge> myEdge = allEdges.stream().filter(a -> a.contains(to)).findFirst();
 
 			if (myEdge.isPresent()) {
-				result.push(myEdge.get().getOtherEnd(current.name));
-				return true;
-			} else {
-				Stack<CoinNode> bestSoFar = new Stack<CoinNode>();
-
-				for (Edge e : allEdges) {
-
-					// Avoid inner loops
-					if (result.stream().anyMatch(a -> a.name.equals(e.getOtherEnd(current.name).name)) == false) {
-
-						if (getPathTo(e.getOtherEnd(current.name), to, result)) {
-							if (bestSoFar.isEmpty() || (bestSoFar.size() > result.size())) {
-								bestSoFar.clear();
-								bestSoFar.addAll(result);
-							}
-							result.pop();
-						}
-					}
-				}
-
-				if (!bestSoFar.isEmpty()) {
-					result.clear();
-					result.addAll(bestSoFar);
-					return true;
-				}
-
-				result.pop();
-				return false;
+				bestSoFar.clear();
+				bestSoFar.addAll(result);
+				bestSoFar.add(myEdge.get());
+				return;
 			}
-		}
 
-		private final List<RequestPath> getPathV1(final CoinNode from, final String to) {
-			synchronized (ExchangeGraph.class) {
+			for (Edge e : allEdges) {
 
-				if ((edgeListPerCoinMap.containsKey(to) == false) || from.name.equals(to))
-					return Collections.emptyList();
+				// Avoid inner loops
+				if (result.stream().anyMatch(a -> a.contains(e.getOtherEnd(current).name)) == false) {
+					result.push(e);
 
-				Stack<Edge> resultStack = new Stack<Edge>();
+					getPathTo(e.getOtherEnd(current), to, result, bestSoFar);
 
-				if (getPathToV1(from, to, resultStack) == false)
-					return Collections.emptyList();
-
-				List<RequestPath> result = new ArrayList<RequestPath>();
-
-				String currentCurrency = from.name;
-				for (Edge e : resultStack) {
-					result.add(new RequestPath(e, e.exchange.isBase(e.symbol, currentCurrency)));
-					currentCurrency = currentCurrency.equals(e.from.name) ? e.to.name : e.from.name;
-				}
-
-				return result;
-			}
-		}
-
-		private final boolean getPathToV1(final CoinNode current, final String to, Stack<Edge> result) {
-			if ((result.isEmpty() == false) && result.peek().contains(to)) {
-				return true;
-			} else {
-
-				Set<Edge> allEdges = new HashSet<Edge>();
-
-				// Push personal set fist
-				allEdges.addAll(current.edges);
-				allEdges.addAll(edgeListPerCoinMap.get(current.name));
-
-				Optional<Edge> myEdge = allEdges.stream().filter(a -> a.contains(to)).findFirst();
-
-				if (myEdge.isPresent()) {
-					result.push(myEdge.get());
-					return true;
-				} else {
-					Stack<Edge> bestSoFar = new Stack<Edge>();
-
-					for (Edge e : allEdges) {
-
-						// Avoid inner loops
-						if (result.stream().anyMatch(a -> a.contains(e.getOtherEnd(current).name)) == false) {
-							result.push(e);
-
-							if (getPathToV1(e.getOtherEnd(current), to, result)) {
-								if (bestSoFar.isEmpty() || (bestSoFar.size() > result.size())) {
-									bestSoFar.clear();
-									bestSoFar.addAll(result);
-								}
-							}
-							result.pop();
-						}
-					}
-
-					if (!bestSoFar.isEmpty()) {
-						result.clear();
-						result.addAll(bestSoFar);
-						return true;
-					}
-
-					return false;
+					result.pop();
 				}
 			}
 		}
@@ -504,15 +393,6 @@ public abstract class Exchange {
 						.collect(Collectors.toList());
 			}
 			return Collections.emptyList();
-		}
-
-		private final Edge getEdge(final String n1, final String n2) {
-			for (Edge e : edgeList) {
-				if (e.contains(n1) && e.contains(n2)) {
-					return e;
-				}
-			}
-			return null;
 		}
 
 		public final String getPairName(String from, String to) {
@@ -743,8 +623,7 @@ public abstract class Exchange {
 
 		if (path.isEmpty() && coinGraph.coinMap.containsKey(from)) {
 			// Global search
-			// NOTE: V1 ( search through edges ) seems to be significantly faster.
-			path = ExchangeGraph.getInstance().getPathV1(coinGraph.coinMap.get(from), to);
+			path = ExchangeGraph.getInstance().getPath(coinGraph.coinMap.get(from), to);
 		}
 
 		for (RequestPath p : path) {

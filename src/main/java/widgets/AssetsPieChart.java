@@ -34,7 +34,8 @@ public class AssetsPieChart extends PieChart {
 
 	public void add(Currency c) {
 
-		Data newData = new Data(c.getCurrencyName(), Utils.isLoading(c.getAsUSD()) ? 0 : c.getAsUSD());
+		double initialValue = Utils.isLoading(c.getAsUSD()) ? 0 : c.getAsUSD();
+		Data newData = new Data(c.getCurrencyName(), initialValue);
 
 		c.getAsUSDProperty().addListener(new ChangeListener<Number>() {
 
@@ -43,7 +44,7 @@ public class AssetsPieChart extends PieChart {
 				Platform.runLater(() -> {
 
 					// Note: The chart seems to break when an Infinity is used as a value
-					if (Utils.isLoading(c.getAsUSD()) == false) {
+					if (Utils.isLoading(newValue) == false) {
 						newData.setPieValue(newValue.doubleValue());
 						newData.setName(c.getCurrencyName() + " - "
 								+ Utils.decimalTwoSymbols.format(newValue.doubleValue()) + "$");

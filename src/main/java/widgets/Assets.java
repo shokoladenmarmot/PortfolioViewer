@@ -85,9 +85,10 @@ public class Assets extends VBox {
 					if ((asUSD != null) && (asUSD.isEmpty() == false)) {
 
 						Exchange e = ExchangeProvider.getMarket(asUSD);
+						getAsUSDProperty().unbind();
+						setAsUSD(Utils.LOADING_VALUE);
 						ObservableNumberValue pairValue = e.getValue("USD", name);
 						pairValue = Bindings.multiply(pairValue, getAmountProperty());
-						getAsUSDProperty().unbind();
 						getAsUSDProperty().bind(pairValue);
 					}
 				}
@@ -101,9 +102,10 @@ public class Assets extends VBox {
 					if ((asBTC != null) && (asBTC.isEmpty() == false)) {
 
 						Exchange e = ExchangeProvider.getMarket(asBTC);
+						getAsBTCProperty().unbind();
+						setAsBTC(Utils.LOADING_VALUE);
 						ObservableNumberValue pairValue = e.getValue("BTC", name);
 						pairValue = Bindings.multiply(pairValue, getAmountProperty());
-						getAsBTCProperty().unbind();
 						getAsBTCProperty().bind(pairValue);
 					}
 				}
@@ -118,9 +120,10 @@ public class Assets extends VBox {
 					if ((asETH != null) && (asETH.isEmpty() == false)) {
 
 						Exchange e = ExchangeProvider.getMarket(asETH);
+						getAsETHProperty().unbind();
+						setAsETH(Utils.LOADING_VALUE);
 						ObservableNumberValue pairValue = e.getValue("ETH", name);
 						pairValue = Bindings.multiply(pairValue, getAmountProperty());
-						getAsETHProperty().unbind();
 						getAsETHProperty().bind(pairValue);
 					}
 				}
@@ -252,8 +255,8 @@ public class Assets extends VBox {
 	}
 
 	private AssetsPieChart pie;
-	private StackedAreaChart<String, Number> area;
-	private StackedBarChart<String, Number> bar;
+//	private StackedAreaChart<String, Number> area;
+//	private StackedBarChart<String, Number> bar;
 
 	private ObservableList<Currency> assets;
 
@@ -267,13 +270,13 @@ public class Assets extends VBox {
 
 	private void init() {
 
-		NumberAxis na = new NumberAxis();
-		na.setLabel("Value");
-		NumberAxis na2 = new NumberAxis();
-		na2.setLabel("Value");
-
-		bar = new StackedBarChart<String, Number>(new CategoryAxis(), na);
-		area = new StackedAreaChart<String, Number>(new CategoryAxis(), na2);
+//		NumberAxis na = new NumberAxis();
+//		na.setLabel("Value");
+//		NumberAxis na2 = new NumberAxis();
+//		na2.setLabel("Value");
+//
+//		bar = new StackedBarChart<String, Number>(new CategoryAxis(), na);
+//		area = new StackedAreaChart<String, Number>(new CategoryAxis(), na2);
 		pie = new AssetsPieChart();
 
 		TradeLibrary.getInstance().getOrders().addListener(new ListChangeListener<Order>() {
@@ -290,7 +293,7 @@ public class Assets extends VBox {
 		HBox tp = new HBox(40);
 		tp.setAlignment(Pos.CENTER);
 		tp.setPadding(new Insets(10, 0, 0, 0));
-		tp.getChildren().addAll(pie, bar, area);
+		tp.getChildren().addAll(pie/*, bar, area*/);
 
 		TableView<Currency> currencyTable = new TableView<Currency>(assets);
 		currencyTable.setMinHeight(100);
@@ -406,7 +409,7 @@ public class Assets extends VBox {
 		for (Entry<String, Double> entr : values.entrySet()) {
 
 			// Don't add currencies which balance is currently 0
-			if (entr.getValue() >= 0) {
+			if (entr.getValue() > 0) {
 
 				boolean exists = false;
 				for (Currency asCurrency : assets) {
