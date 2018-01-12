@@ -32,7 +32,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 
-public class TradeHistory extends VBox {
+public class TradeHistory extends ScrollPane {
 
 	private static final Logger LOGGER = Logger.getLogger(TradeHistory.class.getName());
 
@@ -40,15 +40,6 @@ public class TradeHistory extends VBox {
 	private Map<String, TableView<Order>> recordsMap;
 
 	public TradeHistory() {
-		setAlignment(Pos.CENTER);
-		setPadding(new Insets(10, 0, 0, 0));
-		setMinHeight(300);
-		setMaxHeight(400);
-
-		init();
-	}
-
-	private void init() {
 
 		recordsMap = new HashMap<String, TableView<Order>>();
 
@@ -61,19 +52,12 @@ public class TradeHistory extends VBox {
 			}
 		});
 
-		Label title = new Label("Trade History");
-		title.setAlignment(Pos.CENTER);
-
 		operationalVbox = new VBox(20);
 		operationalVbox.setAlignment(Pos.CENTER);
+		operationalVbox.setPadding(new Insets(10, 5, 10, 5));
 
-		ScrollPane sp = new ScrollPane();
-		sp.setContent(operationalVbox);
-		sp.setFitToWidth(true);
-
-		getChildren().addAll(title, sp);
-
-		// VBox.setVgrow(currencyTable, Priority.ALWAYS);
+		setContent(operationalVbox);
+		setFitToWidth(true);
 	}
 
 	private void update(List<? extends Order> added, List<? extends Order> removed) {
@@ -281,7 +265,10 @@ public class TradeHistory extends VBox {
 
 		table.getColumns().addAll(orderType, amountCurrent, exchanged, date, exchange, price);
 
-		lout.getChildren().addAll(new Label(tableOwner), table);
+		Label tableLabel = new Label(tableOwner);
+		tableLabel.getStyleClass().add("trade-history-table-label");
+
+		lout.getChildren().addAll(tableLabel, table);
 		operationalVbox.getChildren().add(lout);
 
 		recordsMap.put(tableOwner, table);

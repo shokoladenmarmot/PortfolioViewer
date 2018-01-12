@@ -35,6 +35,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
 public class Assets extends VBox {
@@ -255,28 +256,28 @@ public class Assets extends VBox {
 	}
 
 	private AssetsPieChart pie;
-//	private StackedAreaChart<String, Number> area;
-//	private StackedBarChart<String, Number> bar;
+	// private StackedAreaChart<String, Number> area;
+	// private StackedBarChart<String, Number> bar;
 
 	private ObservableList<Currency> assets;
 
 	public Assets() {
 		assets = FXCollections.observableArrayList();
 		setAlignment(Pos.CENTER);
-		setPadding(new Insets(10, 0, 0, 0));
+		setPadding(new Insets(10, 5, 10, 5));
 
 		init();
 	}
 
 	private void init() {
 
-//		NumberAxis na = new NumberAxis();
-//		na.setLabel("Value");
-//		NumberAxis na2 = new NumberAxis();
-//		na2.setLabel("Value");
-//
-//		bar = new StackedBarChart<String, Number>(new CategoryAxis(), na);
-//		area = new StackedAreaChart<String, Number>(new CategoryAxis(), na2);
+		// NumberAxis na = new NumberAxis();
+		// na.setLabel("Value");
+		// NumberAxis na2 = new NumberAxis();
+		// na2.setLabel("Value");
+		//
+		// bar = new StackedBarChart<String, Number>(new CategoryAxis(), na);
+		// area = new StackedAreaChart<String, Number>(new CategoryAxis(), na2);
 		pie = new AssetsPieChart();
 
 		TradeLibrary.getInstance().getOrders().addListener(new ListChangeListener<Order>() {
@@ -287,18 +288,16 @@ public class Assets extends VBox {
 			}
 		});
 
-		Label title = new Label("Assets");
-		title.setAlignment(Pos.CENTER);
-
 		HBox tp = new HBox(40);
 		tp.setAlignment(Pos.CENTER);
 		tp.setPadding(new Insets(10, 0, 0, 0));
-		tp.getChildren().addAll(pie/*, bar, area*/);
+		tp.getChildren().addAll(pie/* , bar, area */);
 
 		TableView<Currency> currencyTable = new TableView<Currency>(assets);
 		currencyTable.setMinHeight(100);
 		currencyTable.setEditable(true);
 		currencyTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+		currencyTable.setPlaceholder(new Label(""));
 
 		TableColumn<Currency, String> currency = new TableColumn<>("Currency");
 		currency.setCellValueFactory(new PropertyValueFactory<Currency, String>("currencyName"));
@@ -374,7 +373,8 @@ public class Assets extends VBox {
 
 		currencyTable.getColumns().addAll(currency, amountCurrent, USD, BTC, ETH);
 
-		getChildren().addAll(title, tp, currencyTable);
+		VBox.setVgrow(tp, Priority.ALWAYS);
+		getChildren().addAll(tp, currencyTable);
 	}
 
 	private void update() {

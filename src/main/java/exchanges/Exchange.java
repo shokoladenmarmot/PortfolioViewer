@@ -37,6 +37,11 @@ import javafx.util.Pair;
 
 public abstract class Exchange {
 
+	/**
+	 * The delay used for a new update. (in seconds)
+	 */
+	private static final int REQUET_TIMEOUT = 20;
+	
 	public enum Status {
 		READY, BUSY, INIT;
 	}
@@ -608,7 +613,7 @@ public abstract class Exchange {
 				// Schedule an update every 10 seconds
 				Main.getInstance().threadExc.scheduleWithFixedDelay(() -> {
 					updateCurrent(pair);
-				}, 0, 10, TimeUnit.SECONDS);
+				}, 0, REQUET_TIMEOUT, TimeUnit.SECONDS);
 				return p;
 			}
 		}

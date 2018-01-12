@@ -65,17 +65,9 @@ public class Main extends Application {
 		try {
 			Parent root = UIPage.INSTANCE.getParent(p);
 
-			double width = 800;
-			double height = 400;
-
-			if (myStage.getScene() != null) {
-				width = myStage.getScene().getWidth();
-				height = myStage.getScene().getHeight();
-			}
-
 			Scene scene = root.getScene();
 			if (scene == null) {
-				scene = new Scene(root, width, height);
+				scene = new Scene(root, 800, 400);
 			}
 			scene.getStylesheets().add(UIPage.defaultStyleSheet);
 			if (p.css != null) {

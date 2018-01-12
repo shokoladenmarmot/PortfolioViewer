@@ -1,7 +1,10 @@
 package widgets;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.logging.Logger;
+
+import com.sun.javafx.charts.Legend;
 
 import core.Utils;
 import javafx.application.Platform;
@@ -24,11 +27,17 @@ public class AssetsPieChart extends PieChart {
 	private final Glow simpleGlow = new Glow();
 
 	public AssetsPieChart() {
-		setLabelLineLength(10);
-		setLegendSide(Side.LEFT);
+		setAnimated(false);
+
+		Legend l = (Legend) getLegend();
+		l.setMinWidth(0);
+		l.setMinHeight(0);
+		l.setMaxWidth(400);
+		l.setMaxHeight(50);
 
 		// Add an info label which we will be using to display slice information
-		info.resizeRelocate(0, 0, 230, 17);
+		info.resizeRelocate(0, 0, 70, 17);
+		info.getStyleClass().add("chart-tooltip-text");
 		getChildren().add(info);
 	}
 
@@ -36,6 +45,8 @@ public class AssetsPieChart extends PieChart {
 
 		double initialValue = Utils.isLoading(c.getAsUSD()) ? 0 : c.getAsUSD();
 		Data newData = new Data(c.getCurrencyName(), initialValue);
+		newData.setName(c.getCurrencyName() + " - "
+				+ Utils.decimalTwoSymbols.format(initialValue) + " $");
 
 		c.getAsUSDProperty().addListener(new ChangeListener<Number>() {
 
@@ -47,9 +58,15 @@ public class AssetsPieChart extends PieChart {
 					if (Utils.isLoading(newValue) == false) {
 						newData.setPieValue(newValue.doubleValue());
 						newData.setName(c.getCurrencyName() + " - "
-								+ Utils.decimalTwoSymbols.format(newValue.doubleValue()) + "$");
+								+ Utils.decimalTwoSymbols.format(newValue.doubleValue()) + " $");
 					}
+					getData().sort(new Comparator<Data>() {
 
+						@Override
+						public int compare(Data o1, Data o2) {
+							return (o1.getPieValue() > o2.getPieValue()) ? 0 : 1;
+						}
+					});
 				});
 			}
 		});
