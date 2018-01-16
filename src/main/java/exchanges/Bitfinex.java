@@ -138,19 +138,33 @@ public class Bitfinex extends Exchange {
 	}
 
 	@Override
-	protected void updateCurrent(String symbol) {
+	protected boolean updateCurrent(String symbol) {
 
 		JSONArray result = JSONFactory.getJSONArray(url + "ticker/t" + symbol);
 		if (result == null)
-			return;
+			return false;
 
 		if (result.length() > 6) {
-			double last = result.getDouble(6);
+			try {
+				double last = result.getDouble(6);
 
-			addToCurrentCache(symbol, last);
+				addToCurrentCache(symbol, last);
+			} catch (JSONException e) {
+				e.printStackTrace();
+				LOGGER.info(e.getMessage());
+				return false;
+			}
+			return true;
 		} else {
 			LOGGER.info("Invalid: Request: " + url + "ticker/t" + symbol);
+			return false;
 		}
+	}
+	
+	@Override
+	protected boolean updateForDate(String symbol, Date date) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 	@Override

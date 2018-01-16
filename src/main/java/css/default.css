@@ -10,6 +10,14 @@
     -fx-alignment: center;
 }
 
+.total-assets-label {
+    -fx-text-fill: #EBEAF0;
+    -fx-font-size: 18.0px;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow( one-pass-box, #000000, 1.0, 1.0, 1.0, 1.0 );
+    -fx-alignment: center;
+}
+
 .button
 {
     -fx-background-color: 
@@ -96,6 +104,7 @@
 {
 	-fx-background-color: derive(black, 50.0%);
 	-fx-font-size: 13.0px;
+    -fx-font-weight: bold;
     -fx-alignment: center;
 }
 
@@ -105,7 +114,6 @@
 
 .table-view .column-header .label {
     -fx-font-size: 15.0px;
-    -fx-font-weight: bold;
     -fx-effect: dropshadow( one-pass-box , #000000 , 0.0,0.0,0.0,1.0 );
 }
 
@@ -131,6 +139,11 @@
 	-fx-start-angle: 180.0;
 	-fx-legend-side: bottom;
 	-fx-label-line-length: 10.0;
+	-fx-padding: 0px;
+}
+
+.chart-content {
+    -fx-padding: 0px;
 }
 
 .axis {

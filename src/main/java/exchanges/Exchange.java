@@ -41,7 +41,7 @@ public abstract class Exchange {
 	 * The delay used for a new update. (in seconds)
 	 */
 	private static final int REQUET_TIMEOUT = 20;
-	
+
 	public enum Status {
 		READY, BUSY, INIT;
 	}
@@ -72,7 +72,7 @@ public abstract class Exchange {
 		}
 	}
 
-	public static class RequestPath {
+	private static class RequestPath {
 		public final Edge edge;
 		public final boolean invert;
 
@@ -196,9 +196,9 @@ public abstract class Exchange {
 		}
 	}
 
-	public class CoinGraph {
+	protected class CoinGraph {
 
-		public class CoinNode implements Comparable<CoinNode> {
+		protected class CoinNode implements Comparable<CoinNode> {
 			private Set<Edge> edges;
 			private final String name;
 
@@ -695,7 +695,9 @@ public abstract class Exchange {
 
 	abstract protected boolean updateOLHC(String pair, int interval);
 
-	abstract protected void updateCurrent(String symbol);
+	abstract protected boolean updateCurrent(String symbol);
+
+	abstract protected boolean updateForDate(String symbol, Date date);
 
 	abstract public boolean isBase(String symbol, String from);
 }

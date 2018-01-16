@@ -1,5 +1,6 @@
 package exchanges;
 
+import java.util.Date;
 import java.util.logging.Logger;
 
 public class Coinbase extends Exchange {
@@ -36,8 +37,15 @@ public class Coinbase extends Exchange {
 	}
 
 	@Override
-	protected void updateCurrent(String symbol) {
+	protected boolean updateCurrent(String symbol) {
 		LOGGER.info("Update symbol:" + symbol);
+		return false;
+	}
+
+	@Override
+	protected boolean updateForDate(String symbol, Date date) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 	@Override

@@ -135,17 +135,30 @@ public class Kraken extends Exchange {
 	}
 
 	@Override
-	protected void updateCurrent(String symbol) {
+	protected boolean updateCurrent(String symbol) {
 		LOGGER.info("Update symbol:" + symbol);
 
 		JSONObject result = JSONFactory.getJSONObject(url + "Ticker?pair=" + symbol);
 
 		if (result == null)
-			return;
+			return false;
 
-		// Last price for last trade
-		addToCurrentCache(symbol, Double
-				.parseDouble(result.getJSONObject("result").getJSONObject(symbol).getJSONArray("c").getString(0)));
+		try {
+			// Last price for last trade
+			addToCurrentCache(symbol, Double
+					.parseDouble(result.getJSONObject("result").getJSONObject(symbol).getJSONArray("c").getString(0)));
+			return true;
+		} catch (JSONException e) {
+			e.printStackTrace();
+			LOGGER.info(e.getMessage());
+			return false;
+		}
+	}
+	
+	@Override
+	protected boolean updateForDate(String symbol, Date date) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 	@Override

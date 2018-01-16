@@ -98,19 +98,32 @@ public class Poloniex extends Exchange {
 	}
 
 	@Override
-	protected void updateCurrent(String symbol) {
+	protected boolean updateCurrent(String symbol) {
 
 		JSONObject result = JSONFactory.getJSONObject(url + "returnTicker");
 		if (result == null)
-			return;
+			return false;
 
 		result = result.getJSONObject(symbol);
 		if (result == null)
-			return;
+			return false;
 
-		double last = Double.parseDouble(result.getString("last"));
+		try {
+			double last = Double.parseDouble(result.getString("last"));
 
-		addToCurrentCache(symbol, last);
+			addToCurrentCache(symbol, last);
+			return true;
+		} catch (JSONException e) {
+			e.printStackTrace();
+			LOGGER.info(e.getMessage());
+			return false;
+		}
+	}
+	
+	@Override
+	protected boolean updateForDate(String symbol, Date date) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 	@Override

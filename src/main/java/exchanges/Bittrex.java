@@ -150,7 +150,7 @@ public class Bittrex extends Exchange {
 	}
 
 	@Override
-	protected void updateCurrent(String symbol) {
+	protected boolean updateCurrent(String symbol) {
 		LOGGER.info("Update symbol:" + symbol);
 
 		// NOTE: V2 is unstable. Often returns data for a different symbol
@@ -158,12 +158,19 @@ public class Bittrex extends Exchange {
 		JSONObject result = JSONFactory.getJSONObject(urlV1 + "getmarketsummary?market=" + symbol);
 
 		if (result == null)
-			return;
+			return false;
 
 		// Last price for last trade
 		double last = result.getJSONArray("result").getJSONObject(0).getDouble("Last");
 
 		addToCurrentCache(symbol, last);
+
+		return true;
+	}
+	@Override
+	protected boolean updateForDate(String symbol, Date date) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 	@Override

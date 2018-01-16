@@ -13,7 +13,12 @@ import core.TradeLibrary;
 import core.Utils;
 import exchanges.Exchange;
 import exchanges.ExchangeProvider;
+import javafx.application.Platform;
+import javafx.beans.InvalidationListener;
+import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
+import javafx.beans.binding.DoubleBinding;
+import javafx.beans.binding.NumberBinding;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
@@ -25,6 +30,7 @@ import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.StackedAreaChart;
@@ -34,6 +40,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -256,8 +263,10 @@ public class Assets extends VBox {
 	}
 
 	private AssetsPieChart pie;
-	// private StackedAreaChart<String, Number> area;
-	// private StackedBarChart<String, Number> bar;
+
+	private Label totalUSD;
+	private Label totalBTC;
+	private Label totalETH;
 
 	private ObservableList<Currency> assets;
 
@@ -270,15 +279,10 @@ public class Assets extends VBox {
 	}
 
 	private void init() {
-
-		// NumberAxis na = new NumberAxis();
-		// na.setLabel("Value");
-		// NumberAxis na2 = new NumberAxis();
-		// na2.setLabel("Value");
-		//
-		// bar = new StackedBarChart<String, Number>(new CategoryAxis(), na);
-		// area = new StackedAreaChart<String, Number>(new CategoryAxis(), na2);
 		pie = new AssetsPieChart();
+		totalUSD = new Label();
+		totalBTC = new Label();
+		totalETH = new Label();
 
 		TradeLibrary.getInstance().getOrders().addListener(new ListChangeListener<Order>() {
 
@@ -287,11 +291,6 @@ public class Assets extends VBox {
 				update();
 			}
 		});
-
-		HBox tp = new HBox(40);
-		tp.setAlignment(Pos.CENTER);
-		tp.setPadding(new Insets(10, 0, 0, 0));
-		tp.getChildren().addAll(pie/* , bar, area */);
 
 		TableView<Currency> currencyTable = new TableView<Currency>(assets);
 		currencyTable.setMinHeight(100);
@@ -373,7 +372,29 @@ public class Assets extends VBox {
 
 		currencyTable.getColumns().addAll(currency, amountCurrent, USD, BTC, ETH);
 
+		GridPane tottalLout = new GridPane();
+		tottalLout.setHgap(25);
+		tottalLout.setVgap(10);
+
+		tottalLout.add(new Label("Total USD:"), 0, 0);
+		tottalLout.add(totalUSD, 1, 0);
+		tottalLout.add(new Label("Total BTC:"), 0, 1);
+		tottalLout.add(totalBTC, 1, 1);
+		tottalLout.add(new Label("Total ETH:"), 0, 2);
+		tottalLout.add(totalETH, 1, 2);
+
+		for (Node n : tottalLout.getChildren()) {
+			n.getStyleClass().add("total-assets-label");
+		}
+
+		HBox tp = new HBox(40);
+		tp.setAlignment(Pos.BOTTOM_RIGHT);
+		tp.setPadding(new Insets(25, 0, 0, 0));
+		tp.getChildren().addAll(tottalLout, pie/* , bar, area */);
+
+		HBox.setHgrow(pie, Priority.ALWAYS);
 		VBox.setVgrow(tp, Priority.ALWAYS);
+
 		getChildren().addAll(tp, currencyTable);
 	}
 
@@ -403,6 +424,8 @@ public class Assets extends VBox {
 
 		}
 
+		// assets.retainAll(listToRetain.stream().filter(a -> a.getAmount() >
+		// 0).collect(Collectors.toSet()));
 		assets.retainAll(listToRetain);
 		pie.cleanByRetainingOnly(values.keySet());
 
@@ -427,6 +450,66 @@ public class Assets extends VBox {
 					pie.add(newCurrency);
 				}
 			}
+		}
+
+		Callable<Void> eval = new Callable<Void>() {
+
+			@Override
+			public Void call() throws Exception {
+				Platform.runLater(() -> {
+					double usdAmount = 0;
+					double btcAmount = 0;
+					double ethAmount = 0;
+
+					for (Currency c : assets) {
+						usdAmount += Math.max(c.getAsUSD(), 0);
+						btcAmount += Math.max(c.getAsBTC(), 0);
+						ethAmount += Math.max(c.getAsETH(), 0);
+					}
+
+					totalUSD.setText(Utils.decimalTwoSymbols.format(usdAmount));
+					totalBTC.setText(Utils.decimalEightSymbols.format(btcAmount));
+					totalETH.setText(Utils.decimalEightSymbols.format(ethAmount));
+				});
+				return null;
+			}
+
+		};
+		for (Currency c : assets) {
+			c.getAsUSDProperty().addListener(new ChangeListener<Number>() {
+
+				@Override
+				public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+					try {
+						eval.call();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			});
+			c.getAsETHProperty().addListener(new ChangeListener<Number>() {
+
+				@Override
+				public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+					try {
+						eval.call();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			});
+			c.getAsBTCProperty().addListener(new ChangeListener<Number>() {
+
+				@Override
+				public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+					try {
+						eval.call();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			});
+
 		}
 	}
 }
