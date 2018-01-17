@@ -117,18 +117,6 @@ public class ChartController implements Initializable {
 				tp.setText("Date: " + x + "\nPrice: " + y);
 			}
 		});
-		Scale sc = new Scale();
-		btcchart.lookup(".chart-plot-background").setOnScroll(e -> {
-			double amount = sc.getX();
-			if (e.getDeltaY() > 0) {
-				amount += 0.1;
-			} else {
-				amount -= 0.1;
-			}
-			sc.setX(amount);
-		});
-
-		btcchart.getTransforms().add(sc);
 
 		startDate.setValue(LocalDate.now());
 		endDate.setValue(LocalDate.now());

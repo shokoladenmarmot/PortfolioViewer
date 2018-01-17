@@ -9,10 +9,12 @@ import exchanges.Exchange;
 import exchanges.ExchangeProvider;
 import fxml.UIPage;
 import javafx.application.Application;
+import javafx.concurrent.Task;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 
 public class Main extends Application {
 	public static final Logger LOGGER = Logger.getLogger(Main.class.getName());
@@ -20,33 +22,55 @@ public class Main extends Application {
 	private static Main instance;
 	private Stage myStage;
 
+	private Task<?> initiateMarkets;
+
 	public final ScheduledThreadPoolExecutor threadExc = new ScheduledThreadPoolExecutor(5);
 
 	public static Main getInstance() {
 		return instance;
 	}
 
+	public Task<?> getInitiateMarket() {
+		if (initiateMarkets == null) {
+			synchronized (this) {
+				initiateMarkets = new Task<Object>() {
+
+					@Override
+					protected Object call() throws Exception {
+						int doneSoFar = 0;
+
+						// Go through all exchanges and initialize them. Given that the JSON factory is
+						// synchronised there is no point for this to be concurrent.
+						for (ExchangeProvider ep : ExchangeProvider.values()) {
+
+							updateMessage("Initializing: " + ep.getInstance().getName());
+
+							while (ep.getInstance().getStatus() != Exchange.Status.READY) {
+								if (isCancelled()) {
+									return false;
+								}
+								ep.getInstance().initiate();
+							}
+
+							updateProgress(++doneSoFar, ExchangeProvider.values().length);
+						}
+						return true;
+					}
+				};
+			}
+		}
+		return initiateMarkets;
+	}
+
 	@Override
 	public void start(Stage primaryStage) {
 		instance = this;
 		myStage = primaryStage;
+		
+		myStage.getIcons().add(new Image(getClass().getResourceAsStream("/icons/base.png"), 128, 128, true, true));
 
-		initialize();
 		changeScene(UIPage.Page.START);
-	}
-
-	/**
-	 * Initialize all exchanges.
-	 */
-	private void initialize() {
-
-		for (ExchangeProvider ep : ExchangeProvider.values()) {
-			threadExc.execute(() -> {
-				do {
-					ep.getInstance().initiate();
-				} while (ep.getInstance().getStatus() == Exchange.Status.INIT);
-			});
-		}
+		threadExc.execute(initiateMarkets);
 	}
 
 	@Override

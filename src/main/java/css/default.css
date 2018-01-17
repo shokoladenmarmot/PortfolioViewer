@@ -18,6 +18,11 @@
     -fx-alignment: center;
 }
 
+.progress-bar .bar {
+    -fx-background-insets: 0;
+    -fx-padding: 4px;
+}
+
 .button
 {
     -fx-background-color: 
